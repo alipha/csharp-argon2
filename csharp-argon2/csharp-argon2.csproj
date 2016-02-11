@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HashMetadata.cs" />
     <Compile Include="PasswordHasher.cs" />
     <Compile Include="Argon2Error.cs" />
     <Compile Include="Argon2Exception.cs" />
