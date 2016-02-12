@@ -1,31 +1,79 @@
-﻿using System;
+﻿/*
+ * The MIT License (MIT)
+ * 
+ * Copyright (c) 2016 Kevin Spinar
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+using System;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Argon2
+namespace Liphsoft.Crypto.Argon2
 {
-    public class PasswordHasher     // TODO: check null arguments
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PasswordHasher
     {
         #region Properties and Constructor
 
-        private static RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
+        private static readonly RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
 
-        private static Regex HashRegex = new Regex(@"$\$argon2([di])$m=(\d+),t=(\d+),p=(\d+)$([A-Za-z0-9+/=]*)$([A-Za-z0-9+/=]+)", RegexOptions.Compiled);
+        private static readonly Regex HashRegex = new Regex(@"^\$argon2([di])\$m=(\d+),t=(\d+),p=(\d+)\$([A-Za-z0-9+/=]*)\$([A-Za-z0-9+/=]+)$", RegexOptions.Compiled);
 
-        
+
+        /// <summary>
+        /// 
+        /// </summary>
         public int TimeCost { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public int MemoryCost { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public int Parallelism { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Argon2Type ArgonType { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Encoding StringEncoding { get; set; }
 
 
+        /// <summary>
+        /// 
+        /// <param name="timeCost"></param>
+        /// <param name="memoryCost"></param>
+        /// <param name="parallelism"></param>
+        /// <param name="argonType"></param>
+        /// </summary>
         public PasswordHasher(int timeCost = 3, int memoryCost = 16, int parallelism = 1, Argon2Type argonType = Argon2Type.Argon2i)
         {
             TimeCost = timeCost;
@@ -40,25 +88,55 @@ namespace Argon2
 
         #region Hash Methods
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
         public string Hash(string password)
         {
+            CheckNull("Hash", "password", password);
+
             return Hash(StringEncoding.GetBytes(password));
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
         public string Hash(byte[] password)
         {
+            CheckNull("Hash", "password", password);
+
             var salt = new byte[16];
             Rng.GetBytes(salt);
             return Hash(password, salt);
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <param name="salt"></param>
+        /// <returns></returns>
+        /// </summary>
         public string Hash(string password, string salt)
         {
+            CheckNull("Hash", "password", password, "salt", salt);
+
             return Hash(StringEncoding.GetBytes(password), StringEncoding.GetBytes(salt));
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <param name="salt"></param>
+        /// <returns></returns>
+        /// </summary>
         public string Hash(byte[] password, byte[] salt)
         {
+            CheckNull("Hash", "password", password, "salt", salt);
+
             var hash = new byte[32];
             var encoded = new byte[81 + (salt.Length * 4 + 3) / 3];
             var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, encoded, encoded.Length, (int)ArgonType);
@@ -70,7 +148,7 @@ namespace Argon2
             while(encoded[firstNonNull] == 0)
                 firstNonNull--;
 
-            return StringEncoding.GetString(encoded, 0, firstNonNull + 1);
+            return Encoding.ASCII.GetString(encoded, 0, firstNonNull + 1);
         }
 
         #endregion
@@ -78,14 +156,30 @@ namespace Argon2
 
         #region Verify Methods
 
-        public bool Verify(string formattedHash, string password)
+        /// <summary>
+        /// 
+        /// <param name="expectedHash"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
+        public bool Verify(string expectedHash, string password)
         {
-            return Verify(formattedHash, StringEncoding.GetBytes(password));
+            CheckNull("Verify", "expectedHash", expectedHash, "password", password);
+
+            return Verify(expectedHash, StringEncoding.GetBytes(password));
         }
 
-        public bool Verify(string formattedHash, byte[] password)
+        /// <summary>
+        /// 
+        /// <param name="expectedHash"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
+        public bool Verify(string expectedHash, byte[] password)
         {
-            var result = (Argon2Error)crypto_argon2_verify(StringEncoding.GetBytes(formattedHash), password, password.Length, (int)ArgonType);
+            CheckNull("Verify", "expectedHash", expectedHash, "password", password);
+
+            var result = (Argon2Error)crypto_argon2_verify(StringEncoding.GetBytes(expectedHash), password, password.Length, (int)ArgonType);
 
             if (result == Argon2Error.OK || result == Argon2Error.DECODING_FAIL)
                 return result == Argon2Error.OK;
@@ -94,30 +188,49 @@ namespace Argon2
         }
 
 
-        public bool VerifyAndUpdate(string formattedHash, string password, out bool isUpdated, out string newFormattedHash)
+
+        /// <summary>
+        /// 
+        /// <param name="expectedHash"></param>
+        /// <param name="password"></param>
+        /// <param name="isUpdated"></param>
+        /// <param name="newFormattedHash"></param>
+        /// <returns></returns>
+        /// </summary>
+        public bool VerifyAndUpdate(string expectedHash, string password, out bool isUpdated, out string newFormattedHash)
         {
-            return VerifyAndUpdate(formattedHash, StringEncoding.GetBytes(password), out isUpdated, out newFormattedHash);
+            CheckNull("VerifyAndUpdate", "expectedHash", expectedHash, "password", password);
+
+            return VerifyAndUpdate(expectedHash, StringEncoding.GetBytes(password), out isUpdated, out newFormattedHash);
         }
 
-        public bool VerifyAndUpdate(string formattedHash, byte[] password, out bool isUpdated, out string newFormattedHash)
+        /// <summary>
+        /// 
+        /// <param name="expectedHash"></param>
+        /// <param name="password"></param>
+        /// <param name="isUpdated"></param>
+        /// <param name="newFormattedHash"></param>
+        /// <returns></returns>
+        /// </summary>
+        public bool VerifyAndUpdate(string expectedHash, byte[] password, out bool isUpdated, out string newFormattedHash)
         {
-            var hashMetadata = ExtractMetadata(formattedHash);
+            CheckNull("VerifyAndUpdate", "expectedHash", expectedHash, "password", password);
+
+            // perform these operations regardless of whether the password verifies to ensure timing is as consistent as possible
+            var hashMetadata = ExtractMetadata(expectedHash);
             byte[] salt = hashMetadata.GetSaltBytes();
+            bool update = (hashMetadata.MemoryCost ^ MemoryCost | hashMetadata.TimeCost ^ TimeCost |
+                            hashMetadata.Parallelism ^ Parallelism) != 0;
 
-            if (Verify(formattedHash, password))
+            if (Verify(expectedHash, password))
             {
-                isUpdated = (hashMetadata.MemoryCost != MemoryCost || hashMetadata.TimeCost != TimeCost || hashMetadata.Parallelism != Parallelism);
-
-                if(isUpdated)
-                    newFormattedHash = Hash(password, salt);
-                else
-                    newFormattedHash = formattedHash;
-
+                isUpdated = update;
+                newFormattedHash = (update ? Hash(password, salt) : expectedHash);
                 return true;
             }
 
             isUpdated = false;
-            newFormattedHash = formattedHash;
+            newFormattedHash = expectedHash;
             return false;
         }
 
@@ -126,8 +239,15 @@ namespace Argon2
 
         #region Extract Metadata Method
 
+        /// <summary>
+        /// 
+        /// <param name="formattedHash"></param>
+        /// <returns></returns>
+        /// </summary>
         public HashMetadata ExtractMetadata(string formattedHash)
         {
+            CheckNull("ExtractMetadata", "formattedHash", formattedHash);
+            
             var match = HashRegex.Match(formattedHash);
 
             if (!match.Success)
@@ -149,25 +269,55 @@ namespace Argon2
 
         #region HashRaw Methods
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
         public byte[] HashRaw(string password)
         {
+            CheckNull("HashRaw", "password", password);
+            
             return HashRaw(StringEncoding.GetBytes(password));
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <returns></returns>
+        /// </summary>
         public byte[] HashRaw(byte[] password)
         {
+            CheckNull("HashRaw", "password", password);
+            
             var salt = new byte[16];
             Rng.GetBytes(salt);
             return HashRaw(password, salt);
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <param name="salt"></param>
+        /// <returns></returns>
+        /// </summary>
         public byte[] HashRaw(string password, string salt)
         {
+            CheckNull("HashRaw", "password", password, "salt", salt);
+
             return HashRaw(StringEncoding.GetBytes(password), StringEncoding.GetBytes(salt));
         }
 
+        /// <summary>
+        /// 
+        /// <param name="password"></param>
+        /// <param name="salt"></param>
+        /// <returns></returns>
+        /// </summary>
         public byte[] HashRaw(byte[] password, byte[] salt)
         {
+            CheckNull("HashRaw", "password", password, "salt", salt);
+
             var hash = new byte[32];
             var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, null, 0, (int)ArgonType);
 
@@ -181,6 +331,13 @@ namespace Argon2
 
 
         #region Privates
+
+        private static void CheckNull(string methodName, params object[] arguments)
+        {
+            for(var i = 0; i < arguments.Length; i += 2)
+                if(arguments[i + 1] == null)
+                    throw new ArgumentNullException(arguments[i].ToString(), string.Format("Argument {0} to method PasswordHasher.{1} is null", arguments[i], methodName));
+        }
 
         [DllImport("libargon2.dll", CallingConvention=CallingConvention.Cdecl)]
         private static extern int crypto_argon2_hash(int t_cost, int m_cost, int parallelism, 

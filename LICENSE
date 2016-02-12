@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) 2016 Kevin Spinar
+Copyright (c) 2016 Kevin Spinar (Alipha)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-----
+
+This software is a binding around Daniel Dinu and Dmitry Khovratovich's Argon2
+library.  Their work is licensed under a Creative Commons CC0 1.0 License/Waiver.
+Refer to \libargon2\phc-winner-argon2\LICENSE for their licensing.
