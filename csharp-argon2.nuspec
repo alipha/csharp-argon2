@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Liphsoft.Crypto.Argon2</id>
+	<title>Argon2 Password Hasher</title>
+    <version>1.0.0</version>
+    <authors>Kevin Spinar (Alipha)</authors>
+    <owners>Kevin Spinar</owners>
+    <licenseUrl>https://github.com/alipha/csharp-argon2/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/alipha/csharp-argon2/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A .NET wrapper to invoke a C implementation of Argon2.</description>
+    <releaseNotes>Initial implementation.</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>argon2 password hash hashing crypto cryptographic cryptography</tags>
+    <dependencies />
+  </metadata>
+</package>

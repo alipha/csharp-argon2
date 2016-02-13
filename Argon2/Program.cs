@@ -22,16 +22,154 @@
  * SOFTWARE.
  */
 using System;
+using System.Linq;
 
 namespace Liphsoft.Crypto.Argon2
 {
     class Program
     {
+        private const int T_COST_DEF = 3;
+        private const int LOG_M_COST_DEF = 12;
+        private const int THREADS_DEF = 1;
+        private const int SALT_LEN = 16;
+
+        private static void Usage()
+        {
+            Console.WriteLine("Usage:  Argon2 salt [-d] [-t iterations] [-m memory] [-p parallelism] [-e|-r]");
+            Console.WriteLine("\tPassword is read from stdin");
+            Console.WriteLine("Parameters:");
+            Console.WriteLine("\tsalt\t\tThe salt to use, at most {0} characters", SALT_LEN);
+            Console.WriteLine("\t-d\t\tUse Argon2d instead of Argon2i (which is the default)");
+            Console.WriteLine("\t-t N\t\tSets the number of iterations to N (default = {0})", T_COST_DEF);
+            Console.WriteLine("\t-m N\t\tSets the memory usage of 2^N KiB (default {0})", LOG_M_COST_DEF);
+            Console.WriteLine("\t-p N\t\tSets parallelism to N threads (default {0})", THREADS_DEF);
+            Console.WriteLine("\t-e\t\tOutput only encoded hash and metadata");
+            Console.WriteLine("\t-r\t\tOutput only the raw hexadecimal of the hash");
+        }
+
+        private static void Fatal(string error)
+        {
+            Console.Error.WriteLine("Error: {0}", error);
+            Environment.Exit(1);
+        }
+
+        private static string ToHex(byte[] bytes)
+        {
+            return string.Join("", bytes.Select(x => string.Format("{0:x2}", x)));
+        }
+
+        private static int ReadArg(string[] args, int index, string switchName, int minValue, int maxValue)
+        {
+            if(index >= args.Length)
+                Fatal(string.Format("missing {0} argument", switchName));
+
+            long value = 0;
+
+            if(!long.TryParse(args[index], out value) || value < minValue || value > maxValue)
+                Fatal(string.Format("bad numeric input for {0}. Allowed range is {1} to {2}", switchName, minValue, maxValue));
+
+            return (int)value;
+        }
+
+        private static void Run(PasswordHasher hasher, string pwd, string salt, bool rawOnly, bool encodedOnly)
+        {
+            try
+            {
+                if (rawOnly)
+                {
+                    Console.WriteLine(ToHex(hasher.HashRaw(pwd, salt)));
+                    return;
+                }
+
+                if (encodedOnly)
+                {
+                    Console.WriteLine(hasher.Hash(pwd, salt));
+                    return;
+                }
+
+                var startTime = DateTime.Now;
+                string encoded = hasher.Hash(pwd, salt);
+                var stopTime = DateTime.Now;
+
+                HashMetadata metadata = hasher.ExtractMetadata(encoded);
+
+                Console.WriteLine("Hash:\t\t" + ToHex(metadata.GetHashBytes()));
+                Console.WriteLine("Encoded:\t" + encoded);
+                Console.WriteLine("{0:0.000} seconds", (stopTime - startTime).TotalSeconds);
+
+                if(hasher.Verify(encoded, pwd))
+                    Console.WriteLine("Verification ok");
+                else
+                    throw new Argon2Exception("verifying", Argon2Error.DECODING_FAIL);
+            }
+            catch (Exception ex)
+            {
+                Fatal(ex.Message);
+            }
+        }
+
         static void Main(string[] args)
         {
-            var argon2 = new PasswordHasher();
-            Console.WriteLine(argon2.Hash("Test", "fdsdsfsdfasddsfdasdsdfoo"));
-            Console.ReadLine();
+            int m_cost = LOG_M_COST_DEF;
+            int t_cost = T_COST_DEF;
+            int threads = THREADS_DEF;
+            Argon2Type type = Argon2Type.Argon2i;
+            bool rawOnly = false;
+            bool encodedOnly = false;
+
+            if (args.Length == 0)
+            {
+                Usage();
+                Environment.Exit(30);
+            }
+            
+            var pwd = Console.In.ReadToEnd();
+
+            if (pwd.EndsWith("\r\n"))
+                pwd = pwd.Substring(0, pwd.Length - 2);
+            else if(pwd.EndsWith("\n"))
+                pwd = pwd.Substring(0, pwd.Length - 1);
+
+            if (args[0].Length > SALT_LEN)
+                Fatal("salt too long");
+
+            var salt = args[0] + new string('\0', SALT_LEN - args[0].Length);
+
+            for (var i = 1; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case "-m": m_cost = ReadArg(args, ++i, "-m", 1, 32); break;
+                    case "-t": t_cost = ReadArg(args, ++i, "-t", 1, int.MaxValue); break;
+                    case "-p": threads = ReadArg(args, ++i, "-p", 1, 0xFFFFFF); break;
+                    case "-d": type = Argon2Type.Argon2d; break;
+                    case "-e":
+                    case "-encoded":
+                        encodedOnly = true;
+                        break;
+                    case "-r":
+                    case "-raw":
+                        rawOnly = true;
+                        break;
+                    default:
+                        Fatal("unknown argument " + args[i]);
+                        break;
+                }
+            }
+
+            if (encodedOnly && rawOnly)
+                Fatal("Only one of -e or -r may be specified");
+
+            if (!encodedOnly && !rawOnly)
+            {
+                Console.WriteLine("Type:\t\t{0}", type);
+                Console.WriteLine("Iterations:\t{0}", t_cost);
+                Console.WriteLine("Memory:\t\t{0}", m_cost);
+
+            }
+
+            var hasher = new PasswordHasher(t_cost, 1 << m_cost, threads, type);
+            Run(hasher, pwd, salt, rawOnly, encodedOnly);
         }
     }
 }

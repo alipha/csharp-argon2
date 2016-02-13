@@ -74,10 +74,10 @@ namespace Liphsoft.Crypto.Argon2
         /// <param name="parallelism"></param>
         /// <param name="argonType"></param>
         /// </summary>
-        public PasswordHasher(int timeCost = 3, int memoryCost = 16, int parallelism = 1, Argon2Type argonType = Argon2Type.Argon2i)
+        public PasswordHasher(int timeCost = 3, int memoryCost = 65536, int parallelism = 1, Argon2Type argonType = Argon2Type.Argon2i)
         {
             TimeCost = timeCost;
-            MemoryCost = 1 << memoryCost;
+            MemoryCost = memoryCost;
             Parallelism = parallelism;
             ArgonType = argonType;
             StringEncoding = Encoding.UTF8;
@@ -215,17 +215,23 @@ namespace Liphsoft.Crypto.Argon2
         public bool VerifyAndUpdate(string expectedHash, byte[] password, out bool isUpdated, out string newFormattedHash)
         {
             CheckNull("VerifyAndUpdate", "expectedHash", expectedHash, "password", password);
-
-            // perform these operations regardless of whether the password verifies to ensure timing is as consistent as possible
-            var hashMetadata = ExtractMetadata(expectedHash);
-            byte[] salt = hashMetadata.GetSaltBytes();
-            bool update = (hashMetadata.MemoryCost ^ MemoryCost | hashMetadata.TimeCost ^ TimeCost |
-                            hashMetadata.Parallelism ^ Parallelism) != 0;
-
+            
             if (Verify(expectedHash, password))
             {
-                isUpdated = update;
-                newFormattedHash = (update ? Hash(password, salt) : expectedHash);
+                var hashMetadata = ExtractMetadata(expectedHash);
+                byte[] salt = hashMetadata.GetSaltBytes();
+
+                if (hashMetadata.MemoryCost != MemoryCost || hashMetadata.TimeCost != TimeCost || hashMetadata.Parallelism != Parallelism)
+                {
+                    isUpdated = true;
+                    newFormattedHash = Hash(password, salt);
+                }
+                else
+                {
+                    isUpdated = false;
+                    newFormattedHash = expectedHash;
+                }
+
                 return true;
             }
 
