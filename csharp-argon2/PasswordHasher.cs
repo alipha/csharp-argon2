@@ -96,7 +96,6 @@ namespace Liphsoft.Crypto.Argon2
         /// Hash the password using Argon2 with a cryptographically-secure, random, 16-byte salt.
         /// This is the only overload of the Hash method that the typical user will need to use. The other overloads are provided for interoperability purposes.
         /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
-        /// The timing of this method may leak information about the length of the password and/or the character set.
         /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
         /// </summary>
@@ -126,7 +125,6 @@ namespace Liphsoft.Crypto.Argon2
         /// Hash the password using Argon2 with the specified salt.
         /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(string password) overload instead.
         /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
-        /// The timing of this method may leak information about the length and/or character set of the password and salt.
         /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
@@ -173,7 +171,6 @@ namespace Liphsoft.Crypto.Argon2
         /// Hashes the password and verifies that the password results in the specified hash.
         /// The ArgonType must of this PasswordHasher object must match what was used to generate expectedHash.
         /// The other parameters (timeCost, etc.) do not need to match and the parameters embedded in the expectedHash will be used.
-        /// The timing of this method may leak information about the length and/or character set of the attempted password.
         /// <param name="expectedHash">Hashing the password should result in this hash</param>
         /// <param name="password">The password to hash and compare its result to expectedHash. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>Whether the password results in the expectedHash when hashed</returns>
@@ -212,8 +209,6 @@ namespace Liphsoft.Crypto.Argon2
         /// If the password verification is successful, this method checks to see if the memory cost, time cost, and parallelism
         /// match the parameters the PasswordHasher object was constructed with. If they do not much, then the password is rehashed
         /// using the new parameters and the result is outputted via the newFormattedHash parameter.
-        /// If the verification is not successful, the timing of this method may leak information about the length and/or character set of the attempted password.
-        /// If verification is successful, then the timing may leak information about the hash.
         /// <param name="expectedHash">Hashing the password should result in this hash</param>
         /// <param name="password">The password to hash and compare its result to expectedHash. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <param name="isUpdated">Whether the cost parameters of expectedHash differ from the PasswordHasher object and if the password was rehashed using th new parameters. This is always false if the password was incorrect.</param>
@@ -232,8 +227,6 @@ namespace Liphsoft.Crypto.Argon2
         /// If the password verification is successful, this method checks to see if the memory cost, time cost, and parallelism
         /// match the parameters the PasswordHasher object was constructed with. If they do not much, then the password is rehashed
         /// using the new parameters and the result is outputted via the newFormattedHash parameter.
-        /// If the verification is not successful, this method operates in constant time.
-        /// If verification is successful, then the timing may leak information about the hash.
         /// <param name="expectedHash">Hashing the password should result in this hash</param>
         /// <param name="password">The raw password bytes to hash and compare its result to expectedHash</param>
         /// <param name="isUpdated">Whether the cost parameters of expectedHash differ from the PasswordHasher object and if the password was rehashed using th new parameters. This is always false if the password was incorrect.</param>
@@ -277,7 +270,6 @@ namespace Liphsoft.Crypto.Argon2
         /// Extracts the memory cost, time cost, etc. used to generate the Argon2 hash.
         /// This method does not support all the features of Argon2 hash and will fail to decode hashes
         /// generated using the extra features not supported in this C# binding.
-        /// This method does not operate in constant time and may leak information about the value of the hash.
         /// <param name="formattedHash">An encoded Argon2 hash created by the Hash method</param>
         /// <returns>The hash metadata or null if the formattedHash was not a valid encoded Argon2 hash</returns>
         /// </summary>
@@ -309,7 +301,6 @@ namespace Liphsoft.Crypto.Argon2
         /// <summary>
         /// Hash the password using Argon2 with a cryptographically-secure, random, 16-byte salt.
         /// The HashRaw methods are provided for interoperability purposes. The Hash methods should be used in favor over the HashRaw methods. 
-        /// The timing of this method may leak information about the length of the password and/or the character set.
         /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A 32-byte array containing only the resulting hash</returns>
         /// </summary>
@@ -338,7 +329,6 @@ namespace Liphsoft.Crypto.Argon2
         /// <summary>
         /// Hash the password using Argon2 with the specified salt.
         /// The HashRaw methods are provided for interoperability purposes. The Hash methods should be used in favor over the HashRaw methods. 
-        /// The timing of this method may leak information about the length and/or character set of the password and salt.
         /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A 32-byte array containing only the resulting hash</returns>

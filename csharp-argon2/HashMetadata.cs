@@ -65,20 +65,17 @@ namespace Liphsoft.Crypto.Argon2
 
         /// <summary>
         /// The raw bytes represented by the base-64 encoded salt
-        /// This method does not operate in constant time and may leak information about the salt.
         /// </summary>
         public byte[] GetSaltBytes() { return FromBase64(Base64Salt); }
 
         /// <summary>
         /// The raw bytes represented by the base-64 encoded hash
-        /// This method does not operate in constant time and may leak information about the hash.
         /// </summary>
         public byte[] GetHashBytes() { return FromBase64(Base64Hash); }
 
 
         /// <summary>
         /// Converts HashMetadata back into the original Argon2 formatted string.
-        /// This method does not operate in constant time and may leak information about the hash.
         /// </summary>
         public override string ToString()
         {
