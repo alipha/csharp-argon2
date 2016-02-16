@@ -24,11 +24,13 @@
 namespace Liphsoft.Crypto.Argon2
 {
     /// <summary>
-    /// 
+    /// The type of Argon2 hashing algorithm to use.
+    /// Argon2d - The memory access is dependent upon the hash value (vulnerable to side-channel attacks)
+    /// Argon2i - The memory access is independent upon the hash value (safe from side-channel atacks)
     /// </summary>
     public enum Argon2Type
     {
-        Argon2d = 0,   /* Dependent (vulnerable to side-channel attacks) */
-        Argon2i = 1    /* Independent (safe from side-channel attacks) */
+        Argon2d = 0,   /* Dependent */
+        Argon2i = 1    /* Independent */
     }
 }

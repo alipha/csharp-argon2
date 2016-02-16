@@ -26,54 +26,59 @@ using System;
 namespace Liphsoft.Crypto.Argon2
 {
     /// <summary>
-    /// 
+    /// HashMetadata represents the information stored in the encoded Argon2 format
     /// </summary>
     public class HashMetadata
     {
         /// <summary>
-        /// 
+        /// The type of Argon2 hashing algorithm to use
+        /// Argon2d - The memory access is dependent upon the hash value (vulnerable to side-channel attacks)
+        /// Argon2i - The memory access is independent upon the hash value (safe from side-channel atacks)
         /// </summary>
         public Argon2Type ArgonType { get; set; }
 
         /// <summary>
-        /// 
+        /// How much memory to use while hashing in kibibytes (KiB)
         /// </summary>
-        public int MemoryCost { get; set; }
+        public uint MemoryCost { get; set; }
 
         /// <summary>
-        /// 
+        /// How many iterations of the Argon2 hash to perform
         /// </summary>
-        public int TimeCost { get; set; }
+        public uint TimeCost { get; set; }
 
         /// <summary>
-        /// 
+        /// How many threads to use while hashing
         /// </summary>
-        public int Parallelism { get; set; }
+        public uint Parallelism { get; set; }
 
         /// <summary>
-        /// 
+        /// Base-64 encoding of the salt used, minus the padding (=) characters
         /// </summary>
         public string Base64Salt { get; set; }
 
         /// <summary>
-        /// 
+        /// Base-64 encoding of the resulting hash, minus the padding (=) characters
         /// </summary>
         public string Base64Hash { get; set; }
 
 
         /// <summary>
-        /// 
+        /// The raw bytes represented by the base-64 encoded salt
+        /// This method does not operate in constant time and may leak information about the salt.
         /// </summary>
         public byte[] GetSaltBytes() { return FromBase64(Base64Salt); }
 
         /// <summary>
-        /// 
+        /// The raw bytes represented by the base-64 encoded hash
+        /// This method does not operate in constant time and may leak information about the hash.
         /// </summary>
         public byte[] GetHashBytes() { return FromBase64(Base64Hash); }
 
 
         /// <summary>
-        /// 
+        /// Converts HashMetadata back into the original Argon2 formatted string.
+        /// This method does not operate in constant time and may leak information about the hash.
         /// </summary>
         public override string ToString()
         {

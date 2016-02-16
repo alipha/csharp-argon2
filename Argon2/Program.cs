@@ -28,9 +28,9 @@ namespace Liphsoft.Crypto.Argon2
 {
     class Program
     {
-        private const int T_COST_DEF = 3;
+        private const uint T_COST_DEF = 3;
         private const int LOG_M_COST_DEF = 12;
-        private const int THREADS_DEF = 1;
+        private const uint THREADS_DEF = 1;
         private const int SALT_LEN = 16;
 
         private static void Usage()
@@ -58,7 +58,7 @@ namespace Liphsoft.Crypto.Argon2
             return string.Join("", bytes.Select(x => string.Format("{0:x2}", x)));
         }
 
-        private static int ReadArg(string[] args, int index, string switchName, int minValue, int maxValue)
+        private static uint ReadArg(string[] args, int index, string switchName, uint minValue, uint maxValue)
         {
             if(index >= args.Length)
                 Fatal(string.Format("missing {0} argument", switchName));
@@ -68,7 +68,7 @@ namespace Liphsoft.Crypto.Argon2
             if(!long.TryParse(args[index], out value) || value < minValue || value > maxValue)
                 Fatal(string.Format("bad numeric input for {0}. Allowed range is {1} to {2}", switchName, minValue, maxValue));
 
-            return (int)value;
+            return (uint)value;
         }
 
         private static void Run(PasswordHasher hasher, string pwd, string salt, bool rawOnly, bool encodedOnly)
@@ -110,9 +110,9 @@ namespace Liphsoft.Crypto.Argon2
 
         static void Main(string[] args)
         {
-            int m_cost = LOG_M_COST_DEF;
-            int t_cost = T_COST_DEF;
-            int threads = THREADS_DEF;
+            uint m_cost = (uint)(1 << LOG_M_COST_DEF);
+            uint t_cost = T_COST_DEF;
+            uint threads = THREADS_DEF;
             Argon2Type type = Argon2Type.Argon2i;
             bool rawOnly = false;
             bool encodedOnly = false;
@@ -139,7 +139,7 @@ namespace Liphsoft.Crypto.Argon2
             {
                 switch (args[i])
                 {
-                    case "-m": m_cost = ReadArg(args, ++i, "-m", 1, 32); break;
+                    case "-m": m_cost = (1U << (int)ReadArg(args, ++i, "-m", 1, 32)); break;
                     case "-t": t_cost = ReadArg(args, ++i, "-t", 1, int.MaxValue); break;
                     case "-p": threads = ReadArg(args, ++i, "-p", 1, 0xFFFFFF); break;
                     case "-d": type = Argon2Type.Argon2d; break;
@@ -164,11 +164,12 @@ namespace Liphsoft.Crypto.Argon2
             {
                 Console.WriteLine("Type:\t\t{0}", type);
                 Console.WriteLine("Iterations:\t{0}", t_cost);
-                Console.WriteLine("Memory:\t\t{0}", m_cost);
+                Console.WriteLine("Memory:\t\t{0} KiB", m_cost);
+                Console.WriteLine("Parallelism:\t{0}", threads);
 
             }
 
-            var hasher = new PasswordHasher(t_cost, 1 << m_cost, threads, type);
+            var hasher = new PasswordHasher(t_cost, m_cost, threads, type);
             Run(hasher, pwd, salt, rawOnly, encodedOnly);
         }
     }
