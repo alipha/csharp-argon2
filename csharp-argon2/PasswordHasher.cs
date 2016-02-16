@@ -1,7 +1,7 @@
 ﻿/*
  * The MIT License (MIT)
  * 
- * Copyright (c) 2016 Kevin Spinar
+ * Copyright (c) 2016 Kevin Spinar (Alipha)
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -246,9 +246,12 @@ namespace Liphsoft.Crypto.Argon2
         #region Extract Metadata Method
 
         /// <summary>
-        /// 
-        /// <param name="formattedHash"></param>
-        /// <returns></returns>
+        /// Extracts the memory cost, time cost, etc. used to generate the Argon2 hash.
+        /// This method does not support all the features of Argon2 hash and will fail to decode hashes
+        /// generated using the extra features not supported in this C# binding.
+        /// This method does not operate in constant time and may leak information about the value of the hash.
+        /// <param name="formattedHash">An encoded Argon2 hash created by the Hash method</param>
+        /// <returns>The hash metadata or null if the formattedHash was not a valid encoded Argon2 hash</returns>
         /// </summary>
         public HashMetadata ExtractMetadata(string formattedHash)
         {
