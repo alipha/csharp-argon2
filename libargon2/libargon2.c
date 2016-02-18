@@ -23,6 +23,7 @@
 */
 
 #include "libargon2.h"
+#include "encoding.h"
 
 /**
 * This file is simply to proxy the argon2 functions so that I export with dllexport
@@ -48,4 +49,9 @@ int crypto_argon2_verify(const char *encoded, const void *pwd,
 const char *crypto_argon2_error_message(int error_code)
 {
 	return argon2_error_message(error_code);
+}
+
+int crypto_decode_string(argon2_context *ctx, const char *str, argon2_type type)
+{
+	return decode_string(ctx, str, type);
 }

@@ -76,4 +76,12 @@ LIBARGON2_DLLEXPORT int crypto_argon2_verify(const char *encoded, const void *pw
 */
 LIBARGON2_DLLEXPORT const char *crypto_argon2_error_message(int error_code);
 
+/*
+* Decodes an Argon2 hash string into the provided structure 'ctx'.
+* The fields ctx.saltlen, ctx.adlen, ctx.outlen set the maximal salt, ad, out
+* length values that are allowed; invalid input string causes an error.
+* Returned value is ARGON2_OK on success, other ARGON2_ codes on error.
+*/
+LIBARGON2_DLLEXPORT int crypto_decode_string(argon2_context *ctx, const char *str, argon2_type type);
+
 #endif

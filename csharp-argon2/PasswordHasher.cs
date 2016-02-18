@@ -244,7 +244,7 @@ namespace Liphsoft.Crypto.Argon2
                 if (hashMetadata.MemoryCost != MemoryCost || hashMetadata.TimeCost != TimeCost || hashMetadata.Parallelism != Parallelism)
                 {
                     isUpdated = true;
-                    byte[] salt = hashMetadata.GetSaltBytes();
+                    byte[] salt = hashMetadata.Salt;
                     newFormattedHash = Hash(password, salt);
                 }
                 else
@@ -268,8 +268,6 @@ namespace Liphsoft.Crypto.Argon2
 
         /// <summary>
         /// Extracts the memory cost, time cost, etc. used to generate the Argon2 hash.
-        /// This method does not support all the features of Argon2 hash and will fail to decode hashes
-        /// generated using the extra features not supported in this C# binding.
         /// <param name="formattedHash">An encoded Argon2 hash created by the Hash method</param>
         /// <returns>The hash metadata or null if the formattedHash was not a valid encoded Argon2 hash</returns>
         /// </summary>
@@ -277,20 +275,54 @@ namespace Liphsoft.Crypto.Argon2
         {
             CheckNull("ExtractMetadata", "formattedHash", formattedHash);
 
-            var match = HashRegex.Match(formattedHash);
-
-            if (!match.Success)
-                return null;
-
-            return new HashMetadata
+            var context = new Argon2Context
             {
-                ArgonType = (match.Groups[1].Value == "i" ? Argon2Type.Argon2i : Argon2Type.Argon2d),
-                MemoryCost = uint.Parse(match.Groups[2].Value),
-                TimeCost = uint.Parse(match.Groups[3].Value),
-                Parallelism = uint.Parse(match.Groups[4].Value),
-                Base64Salt = match.Groups[5].Value,
-                Base64Hash = match.Groups[6].Value
+                Out = Marshal.AllocHGlobal(32),
+                OutLen = 32,
+                Pwd = Marshal.AllocHGlobal(1),
+                PwdLen = 1,
+                Salt = Marshal.AllocHGlobal(formattedHash.Length),  // ensure the salt is long enough
+                SaltLen = (uint)formattedHash.Length,
+                Secret = Marshal.AllocHGlobal(1),
+                SecretLen = 1,
+                AssocData = Marshal.AllocHGlobal(1),
+                AssocDataLen = 1,
+                TimeCost = 0,
+                MemoryCost = 0,
+                Lanes = 0,
+                Threads = 0
             };
+
+            try
+            {
+                var result = (Argon2Error)crypto_decode_string(context, Encoding.ASCII.GetBytes(formattedHash + "\0"), (int) ArgonType);
+
+                if (result != Argon2Error.OK)
+                    return null;
+
+                var salt = new byte[context.SaltLen];
+                var hash = new byte[context.OutLen];
+                Marshal.Copy(context.Salt, salt, 0, salt.Length);
+                Marshal.Copy(context.Out, hash, 0, hash.Length);
+
+                return new HashMetadata
+                {
+                    ArgonType = this.ArgonType,
+                    MemoryCost = context.MemoryCost,
+                    TimeCost = context.TimeCost,
+                    Parallelism = context.Threads,
+                    Salt = salt,
+                    Hash = hash
+                };
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(context.Out);
+                Marshal.FreeHGlobal(context.Pwd);
+                Marshal.FreeHGlobal(context.Salt);
+                Marshal.FreeHGlobal(context.Secret);
+                Marshal.FreeHGlobal(context.AssocData);
+            }
         }
 
         #endregion
@@ -372,6 +404,7 @@ namespace Liphsoft.Crypto.Argon2
                     throw new ArgumentNullException(arguments[i].ToString(), string.Format("Argument {0} to method PasswordHasher.{1} is null", arguments[i], methodName));
         }
 
+
         [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int crypto_argon2_hash(uint t_cost, uint m_cost, uint parallelism,
             byte[] pwd, int pwdlen,
@@ -380,8 +413,13 @@ namespace Liphsoft.Crypto.Argon2
             byte[] encoded, int encodedlen,
             int type);
 
+
         [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int crypto_argon2_verify(byte[] encoded, byte[] pwd, int pwdlen, int type);
+
+
+        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int crypto_decode_string(Argon2Context ctx, byte[] str, int type);
 
         #endregion
     }

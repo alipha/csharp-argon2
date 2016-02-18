@@ -53,25 +53,25 @@ namespace Liphsoft.Crypto.Argon2
         public uint Parallelism { get; set; }
 
         /// <summary>
-        /// Base-64 encoding of the salt used, minus the padding (=) characters
+        /// The raw bytes of the salt
         /// </summary>
-        public string Base64Salt { get; set; }
+        public byte[] Salt { get; set; }
 
         /// <summary>
-        /// Base-64 encoding of the resulting hash, minus the padding (=) characters
+        /// The raw bytes of the hash
         /// </summary>
-        public string Base64Hash { get; set; }
+        public byte[] Hash { get; set; }
 
 
         /// <summary>
-        /// The raw bytes represented by the base-64 encoded salt
+        /// A base-64 encoded string of the salt, minus the padding (=) characters
         /// </summary>
-        public byte[] GetSaltBytes() { return FromBase64(Base64Salt); }
+        public string GetBase64Salt() { return Convert.ToBase64String(Salt).Replace("=", ""); }
 
         /// <summary>
-        /// The raw bytes represented by the base-64 encoded hash
+        /// A base-64 encoded string of the hash, minus the padding (=) characters
         /// </summary>
-        public byte[] GetHashBytes() { return FromBase64(Base64Hash); }
+        public string GetBase64Hash() { return Convert.ToBase64String(Hash).Replace("=", ""); }
 
 
         /// <summary>
@@ -80,16 +80,7 @@ namespace Liphsoft.Crypto.Argon2
         public override string ToString()
         {
             return string.Format("$argon2{0}$m={1},t={2},p={3}${4}${5}", (ArgonType == Argon2Type.Argon2i ? "i" : "d"),
-                MemoryCost, TimeCost, Parallelism, Base64Salt, Base64Hash);
-        }
-
-
-        private static readonly string[] Base64Padding = {"", "", "==", "="};
-
-        private static byte[] FromBase64(string base64)
-        {
-            int lenMod4 = (base64.Length & 3);
-            return Convert.FromBase64String(base64 + Base64Padding[lenMod4]);
+                MemoryCost, TimeCost, Parallelism, GetBase64Salt(), GetBase64Hash());
         }
     }
 }

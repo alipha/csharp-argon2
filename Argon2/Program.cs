@@ -90,10 +90,10 @@ namespace Liphsoft.Crypto.Argon2
                 var startTime = DateTime.Now;
                 string encoded = hasher.Hash(pwd, salt);
                 var stopTime = DateTime.Now;
-
+                
                 HashMetadata metadata = hasher.ExtractMetadata(encoded);
 
-                Console.WriteLine("Hash:\t\t" + ToHex(metadata.GetHashBytes()));
+                Console.WriteLine("Hash:\t\t" + ToHex(metadata.Hash));
                 Console.WriteLine("Encoded:\t" + encoded);
                 Console.WriteLine("{0:0.000} seconds", (stopTime - startTime).TotalSeconds);
 
