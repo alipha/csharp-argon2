@@ -1,4 +1,27 @@
-﻿using System.Collections.Generic;
+﻿/*
+ * The MIT License (MIT)
+ * 
+ * Copyright (c) 2016 Kevin Spinar (Alipha)
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+using System.Collections.Generic;
 using Liphsoft.Crypto.Argon2;
 
 namespace Example
@@ -33,6 +56,7 @@ namespace Example
 
     class HomeController : Controller
     {
+        // This code is more complicated than necessary IF you do not care about attackers enumerating your user list via timing attacks
         public ActionResult Login(string username, string password)
         {
             // Do profiling to determine what the optimal time and memory cost would be for your server setup
@@ -41,10 +65,22 @@ namespace Example
             // TODO: Edit your web.config or app.config to contain the following keys within your <configuration><appSettings>...</appSettings></configuration>:
             // TODO: <add key="PasswordHasher.TimeCost" value="3" />
             // TODO: <add key="PasswordHasher.MemoryCost" value="65536" />
+            // If you are updating the time cost or memory cost (because, e.g., you moved to faster hardware) then 
+            // add PasswordHasher.OldTimeCost and PasswordHasher.OldMemoryCost keys with the previous values to ensure timing attacks cannot
+            // be done to enumerate the possible users. Remove OldTimeCost and OldMemoryCost when the migration is finished.
 
-            uint timeCost = uint.Parse(ConfigurationManager.AppSettings["PasswordHasher.TimeCost"] ?? "3");
-            uint memoryCost = uint.Parse(ConfigurationManager.AppSettings["PasswordHasher.MemoryCost"] ?? "65536");
-            string dummyHash = string.Format("$argon2i$m={0},t={1},p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", memoryCost, timeCost);
+            string timeCostStr = (ConfigurationManager.AppSettings["PasswordHasher.TimeCost"] ?? "3");
+            string memoryCostStr = (ConfigurationManager.AppSettings["PasswordHasher.MemoryCost"] ?? "65536");
+            uint timeCost = uint.Parse(timeCostStr);
+            uint memoryCost = uint.Parse(memoryCostStr);
+            uint oldTimeCost = uint.Parse(ConfigurationManager.AppSettings["PasswordHasher.OldTimeCost"] ?? timeCostStr);
+            uint oldMemoryCost = uint.Parse(ConfigurationManager.AppSettings["PasswordHasher.OldMemoryCost"] ?? memoryCostStr);
+
+            bool costsDiffer = (timeCost != oldTimeCost || memoryCost != oldMemoryCost);
+
+            string hashFormat = "$argon2i$m={0},t={1},p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+            string dummyHash = string.Format(hashFormat, memoryCost, timeCost);
+            string oldDummyHash = string.Format(hashFormat, oldMemoryCost, oldTimeCost);
 
             var passwordHasher = new PasswordHasher(timeCost, memoryCost);
             
@@ -54,6 +90,9 @@ namespace Example
             string passwordHash = (user != null ? user.PasswordHash : dummyHash);
             bool updatedCost;
             string newPasswordHash;
+
+            HashMetadata hashMetadata = passwordHasher.ExtractMetadata(passwordHash);
+            bool usingOldCosts = (hashMetadata.MemoryCost != memoryCost || hashMetadata.TimeCost != timeCost);
 
             // always compare against a password hash even if the user is not found (when that happens, we compare against dummyHash)
             // to prevent timing attacks from enumerating a list of valid usernames
@@ -69,11 +108,23 @@ namespace Example
                     user.PasswordHash = newPasswordHash;
                     UpdateUser(user);
                 }
+                else if(costsDiffer)
+                {
+                    // run the verification with the old costs so that each login attempt performs a hash
+                    // with the new costs and with the old costs to ensure the timing is consistent
+                    passwordHasher.Verify(oldDummyHash, password);
+                }
 
                 // Successful login
                 LogInUser(user);
                 return RedirectToAction("Index", "Home");
             }
+
+            // if we're migrating password hashes from the old cost parameters to new cost parameters, we want
+            // each login attempt to perform a single hash with the new cost parameters and a single hash with
+            // the old cost parameters so that the timing is consistent.
+            if(costsDiffer)
+                passwordHasher.Verify((usingOldCosts ? dummyHash : oldDummyHash), password);
 
             // User failed to login
             var model = new LoginViewModel {ErrorMessage = "Username or Password is incorrect."};

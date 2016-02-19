@@ -31,11 +31,13 @@ namespace Liphsoft.Crypto.Argon2
         private const uint T_COST_DEF = 3;
         private const int LOG_M_COST_DEF = 12;
         private const uint THREADS_DEF = 1;
+        private const uint HASH_LEN_DEF = 32;
         private const int SALT_LEN = 16;
 
         private static void Usage()
         {
-            Console.WriteLine("Usage:  Argon2 salt [-d] [-t iterations] [-m memory] [-p parallelism] [-e|-r]");
+            Console.WriteLine("Usage:  Argon2 salt [-d] [-t iterations] [-m memory] [-p parallelism]");
+            Console.WriteLine("\t\t[-h length] [-e|-r]");
             Console.WriteLine("\tPassword is read from stdin");
             Console.WriteLine("Parameters:");
             Console.WriteLine("\tsalt\t\tThe salt to use, at most {0} characters", SALT_LEN);
@@ -43,6 +45,7 @@ namespace Liphsoft.Crypto.Argon2
             Console.WriteLine("\t-t N\t\tSets the number of iterations to N (default = {0})", T_COST_DEF);
             Console.WriteLine("\t-m N\t\tSets the memory usage of 2^N KiB (default {0})", LOG_M_COST_DEF);
             Console.WriteLine("\t-p N\t\tSets parallelism to N threads (default {0})", THREADS_DEF);
+            Console.WriteLine("\t-h N\t\tSets hash output length to N bytes (default {0})", HASH_LEN_DEF);
             Console.WriteLine("\t-e\t\tOutput only encoded hash and metadata");
             Console.WriteLine("\t-r\t\tOutput only the raw hexadecimal of the hash");
         }
@@ -113,6 +116,7 @@ namespace Liphsoft.Crypto.Argon2
             uint m_cost = (uint)(1 << LOG_M_COST_DEF);
             uint t_cost = T_COST_DEF;
             uint threads = THREADS_DEF;
+            uint hash_len = HASH_LEN_DEF;
             Argon2Type type = Argon2Type.Argon2i;
             bool rawOnly = false;
             bool encodedOnly = false;
@@ -142,6 +146,7 @@ namespace Liphsoft.Crypto.Argon2
                     case "-m": m_cost = (1U << (int)ReadArg(args, ++i, "-m", 1, 32)); break;
                     case "-t": t_cost = ReadArg(args, ++i, "-t", 1, int.MaxValue); break;
                     case "-p": threads = ReadArg(args, ++i, "-p", 1, 0xFFFFFF); break;
+                    case "-h": hash_len = ReadArg(args, ++i, "-h", 4, int.MaxValue); break;
                     case "-d": type = Argon2Type.Argon2d; break;
                     case "-e":
                     case "-encoded":
@@ -169,7 +174,7 @@ namespace Liphsoft.Crypto.Argon2
 
             }
 
-            var hasher = new PasswordHasher(t_cost, m_cost, threads, type);
+            var hasher = new PasswordHasher(t_cost, m_cost, threads, type, hash_len);
             Run(hasher, pwd, salt, rawOnly, encodedOnly);
         }
     }
