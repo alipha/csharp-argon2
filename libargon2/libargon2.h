@@ -58,7 +58,7 @@ LIBARGON2_DLLEXPORT int crypto_argon2_hash(const uint32_t t_cost, const uint32_t
 	const size_t pwdlen, const void *salt,
 	const size_t saltlen, void *hash,
 	const size_t hashlen, char *encoded,
-	const size_t encodedlen, argon2_type type);
+	const size_t encodedlen, argon2_type type, const uint32_t version);
 
 /**
 * Verifies a password against an encoded string

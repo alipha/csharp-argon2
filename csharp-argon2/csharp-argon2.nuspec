@@ -15,4 +15,8 @@
     <tags>argon2 password hash hashing crypto cryptographic cryptography</tags>
     <dependencies />
   </metadata>
+  <files>
+    <file src="..\bin\x64\Release\Liphsoft.Crypto.Argon2.dll" target="lib" />
+	<file src="..\bin\x64\Release\libargon2.dll" target="lib" />
+  </files>
 </package>

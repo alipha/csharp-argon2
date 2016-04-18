@@ -35,9 +35,9 @@ int crypto_argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
 	const size_t pwdlen, const void *salt,
 	const size_t saltlen, void *hash,
 	const size_t hashlen, char *encoded,
-	const size_t encodedlen, argon2_type type) 
+	const size_t encodedlen, argon2_type type, const uint32_t version) 
 {
-	return argon2_hash(t_cost, m_cost, parallelism, pwd, pwdlen, salt, saltlen, hash, hashlen, encoded, encodedlen, type);
+	return argon2_hash(t_cost, m_cost, parallelism, pwd, pwdlen, salt, saltlen, hash, hashlen, encoded, encodedlen, type, version);
 }
 
 int crypto_argon2_verify(const char *encoded, const void *pwd,

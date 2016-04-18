@@ -155,7 +155,7 @@ namespace Liphsoft.Crypto.Argon2
 
             var hash = new byte[HashLength];
             var encoded = new byte[39 + ((HashLength + salt.Length) * 4 + 3) / 3];
-            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, encoded, encoded.Length, (int)ArgonType);
+            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, encoded, encoded.Length, (int)ArgonType, 0x13);
 
             if (result != Argon2Error.OK)
                 throw new Argon2Exception("hashing", result);
@@ -198,7 +198,7 @@ namespace Liphsoft.Crypto.Argon2
             CheckNull("HashRaw", "password", password, "salt", salt);
 
             var hash = new byte[HashLength];
-            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, null, 0, (int)ArgonType);
+            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, null, 0, (int)ArgonType, 0x13);
 
             if (result != Argon2Error.OK)
                 throw new Argon2Exception("raw hashing", result);
@@ -401,7 +401,7 @@ namespace Liphsoft.Crypto.Argon2
             byte[] salt, int saltlen,
             byte[] hash, int hashlen,
             byte[] encoded, int encodedlen,
-            int type);
+            int type, int version);
 
 
         [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
