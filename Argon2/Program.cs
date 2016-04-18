@@ -58,7 +58,7 @@ namespace Liphsoft.Crypto.Argon2
 
         private static string ToHex(byte[] bytes)
         {
-            return string.Join("", bytes.Select(x => string.Format("{0:x2}", x)));
+            return string.Join("", bytes.Select(x => string.Format("{0:x2}", x)).ToArray());
         }
 
         private static uint ReadArg(string[] args, int index, string switchName, uint minValue, uint maxValue)
