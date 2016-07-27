@@ -3,7 +3,7 @@
   <metadata>
     <id>Liphsoft.Crypto.Argon2</id>
 	<title>Argon2 Password Hasher</title>
-    <version>1.0.0</version>
+    <version>1.0.3</version>
     <authors>Kevin Spinar (Alipha)</authors>
     <owners>Kevin Spinar</owners>
     <licenseUrl>https://github.com/alipha/csharp-argon2/blob/master/LICENSE</licenseUrl>
@@ -16,7 +16,12 @@
     <dependencies />
   </metadata>
   <files>
-    <file src="..\bin\x64\Release\Liphsoft.Crypto.Argon2.dll" target="lib" />
-	<file src="..\bin\x64\Release\libargon2.dll" target="lib" />
+    <file src="..\bin\x64\Release\Liphsoft.Crypto.Argon2.dll" target="lib\net35\x64" />
+	<file src="..\bin\x64\Release\libargon2.dll" target="Argon2\x64" />
+	
+	<file src="..\bin\Release\Liphsoft.Crypto.Argon2.dll" target="lib\net35\x86" />
+	<file src="..\bin\Release\libargon2.dll" target="Argon2\x86" />
+	
+    <file src="Liphsoft.Crypto.Argon2.targets" target="build" />
   </files>
 </package>
