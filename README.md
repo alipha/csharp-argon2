@@ -3,7 +3,7 @@ C#/.NET binding for the Argon2 password hash
 
 ## Installation
 
-The easiest way would be to search for [Liphsoft.Crypto.Argon2](https://www.nuget.org/packages/Liphsoft.Crypto.Argon2) in the Nuget Package Manager and install it through Nuget.
+The easiest way would be to search for [Liphsoft.Crypto.Argon2](https://www.nuget.org/packages/Liphsoft.Crypto.Argon2) in the Nuget Package Manager and install it through Nuget. You should explicitly specify in your solution using the configuration manager whether to build your solution for x86 or x64 and *not* use the default "Any CPU". You may get an error at runtime if the incorrect DLL is used because you specified your platform as "Any CPU".
 
 ### Building from source
 
