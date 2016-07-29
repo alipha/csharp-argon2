@@ -1,6 +1,16 @@
 # csharp-argon2
 C#/.NET binding for the Argon2 password hash
 
+## Installation
+
+The easiest way would be to search for [Liphsoft.Crypto.Argon2](https://www.nuget.org/packages/Liphsoft.Crypto.Argon2) in the Nuget Package Manager and install it through Nuget.
+
+### Building from source
+
+To build the C# and C libraries from source, simply build the csharp-argon2 project and both Liphsoft.Crypto.Argon2.dll and libargon2.dll should be generated in the bin directory of the solution. You need both DLLs.
+
+Note that pre-built versions of the C library, libargon2.dll, are in the `csharp-argon2\x86` and `csharp-argon2\x64` directories if you are unable to build the C project.
+
 ## Usage
 
 ### Basic usage
