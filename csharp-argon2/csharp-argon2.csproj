@@ -63,11 +63,13 @@
   <ItemGroup>
     <Compile Include="Argon2Context.cs" />
     <Compile Include="HashMetadata.cs" />
+    <Compile Include="IPasswordHasher.cs" />
     <Compile Include="PasswordHasher.cs" />
     <Compile Include="Argon2Error.cs" />
     <Compile Include="Argon2Exception.cs" />
     <Compile Include="Argon2Type.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UsageEnvironment.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

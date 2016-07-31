@@ -79,7 +79,7 @@ namespace Liphsoft.Crypto.Argon2
         /// </summary>
         public override string ToString()
         {
-            return string.Format("$argon2{0}$m={1},t={2},p={3}${4}${5}", (ArgonType == Argon2Type.Argon2i ? "i" : "d"),
+            return string.Format("$argon2{0}$v=19$m={1},t={2},p={3}${4}${5}", (ArgonType == Argon2Type.Argon2i ? "i" : "d"),
                 MemoryCost, TimeCost, Parallelism, GetBase64Salt(), GetBase64Hash());
         }
     }
