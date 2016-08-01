@@ -3,7 +3,7 @@
   <metadata>
     <id>Liphsoft.Crypto.Argon2</id>
 	<title>Argon2 Password Hasher</title>
-    <version>1.0.3</version>
+    <version>2.0.0</version>
     <authors>Kevin Spinar (Alipha)</authors>
     <owners>Kevin Spinar</owners>
     <licenseUrl>https://github.com/alipha/csharp-argon2/blob/master/LICENSE</licenseUrl>

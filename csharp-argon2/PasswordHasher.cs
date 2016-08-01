@@ -198,6 +198,45 @@ namespace Liphsoft.Crypto.Argon2
         #endregion
 
 
+        #region GenerateKey and ReproduceKey Methods
+
+        public byte[] GenerateKey(string password, out string metadata)
+        {
+
+        }
+
+        public byte[] GenerateKey(byte[] password, out string metadata)
+        {
+
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt in order to generate a key. Typically, one would use 
+        /// For password storage, consider using the Hash methods instead. 
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] ReproduceKey(string password, string metadata)
+        {
+
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods.
+        /// <param name="password">The raw bytes of the password to be hashed</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] ReproduceKey(byte[] password, string metadata)
+        {
+
+        }
+
+        #endregion
+
+
         #region HashRaw Methods
 
         /// <summary>
@@ -360,55 +399,23 @@ namespace Liphsoft.Crypto.Argon2
         {
             CheckNull("ExtractMetadata", "formattedHash", formattedHash);
 
-            var context = new Argon2Context
-            {
-                Out = Marshal.AllocHGlobal(formattedHash.Length),  // ensure the space to hold the hash is long enough
-                OutLen = (uint)formattedHash.Length,
-                Pwd = Marshal.AllocHGlobal(1),
-                PwdLen = 1,
-                Salt = Marshal.AllocHGlobal(formattedHash.Length),  // ensure the space to hold the salt is long enough
-                SaltLen = (uint)formattedHash.Length,
-                Secret = Marshal.AllocHGlobal(1),
-                SecretLen = 1,
-                AssocData = Marshal.AllocHGlobal(1),
-                AssocDataLen = 1,
-                TimeCost = 0,
-                MemoryCost = 0,
-                Lanes = 0,
-                Threads = 0
-            };
+            var match = HashRegex.Match(formattedHash);
 
-            try
-            {
-                var type = (formattedHash.StartsWith("$argon2i") ? Argon2Type.Argon2i : Argon2Type.Argon2d);
-                var result = (Argon2Error)crypto_decode_string(context, Encoding.ASCII.GetBytes(formattedHash + "\0"), (int)type);
+            if (!match.Success)
+                return null;
 
-                if (result != Argon2Error.OK)
-                    return null;
+            // "^\$argon2([di])\$v=(\d+)$m=(\d+),t=(\d+),p=(\d+)\$([A-Za-z0-9+/=]+)\$([A-Za-z0-9+/=]*)$"
+            var captures = match.Groups[0].Captures;
 
-                var salt = new byte[context.SaltLen];
-                var hash = new byte[context.OutLen];
-                Marshal.Copy(context.Salt, salt, 0, salt.Length);
-                Marshal.Copy(context.Out, hash, 0, hash.Length);
-
-                return new HashMetadata
+            return new HashMetadata
                 {
-                    ArgonType = type,
-                    MemoryCost = context.MemoryCost,
-                    TimeCost = context.TimeCost,
-                    Parallelism = context.Threads,
-                    Salt = salt,
-                    Hash = hash
+                    ArgonType = captures[0].Value == "d" ? Argon2Type.Argon2d : Argon2Type.Argon2i,
+                    MemoryCost = uint.Parse(captures[2].Value),
+                    TimeCost = uint.Parse(captures[3].Value),
+                    Parallelism = uint.Parse(captures[4].Value),
+                    Salt = Convert.FromBase64String(captures[5].Value),
+                    Hash = Convert.FromBase64String(captures[6].Value)
                 };
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(context.Out);
-                Marshal.FreeHGlobal(context.Pwd);
-                Marshal.FreeHGlobal(context.Salt);
-                Marshal.FreeHGlobal(context.Secret);
-                Marshal.FreeHGlobal(context.AssocData);
-            }
         }
 
         #endregion

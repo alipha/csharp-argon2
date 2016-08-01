@@ -63,7 +63,9 @@
   <ItemGroup>
     <Compile Include="Argon2Context.cs" />
     <Compile Include="HashMetadata.cs" />
+    <Compile Include="IKeyGenerator.cs" />
     <Compile Include="IPasswordHasher.cs" />
+    <Compile Include="KeyGenerator.cs" />
     <Compile Include="PasswordHasher.cs" />
     <Compile Include="Argon2Error.cs" />
     <Compile Include="Argon2Exception.cs" />
