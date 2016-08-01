@@ -64,23 +64,11 @@ namespace Liphsoft.Crypto.Argon2
 
 
         /// <summary>
-        /// A base-64 encoded string of the salt, minus the padding (=) characters
-        /// </summary>
-        public string GetBase64Salt() { return Convert.ToBase64String(Salt).Replace("=", ""); }
-
-        /// <summary>
-        /// A base-64 encoded string of the hash, minus the padding (=) characters
-        /// </summary>
-        public string GetBase64Hash() { return Convert.ToBase64String(Hash).Replace("=", ""); }
-
-
-        /// <summary>
         /// Converts HashMetadata back into the original Argon2 formatted string.
         /// </summary>
-        public override string ToString()
+        public string Encode()
         {
-            return string.Format("$argon2{0}$v=19$m={1},t={2},p={3}${4}${5}", (ArgonType == Argon2Type.Argon2i ? "i" : "d"),
-                MemoryCost, TimeCost, Parallelism, GetBase64Salt(), GetBase64Hash());
+            return PasswordHasher.EncodeMetadata(this);
         }
     }
 }

@@ -51,6 +51,11 @@ const char *crypto_argon2_error_message(int error_code)
 	return argon2_error_message(error_code);
 }
 
+int crypto_encode_string(char *dst, size_t dst_len, argon2_context *ctx, argon2_type type)
+{
+	return encode_string(dst, dst_len, ctx, type);
+}
+
 int crypto_decode_string(argon2_context *ctx, const char *str, argon2_type type)
 {
 	return decode_string(ctx, str, type);

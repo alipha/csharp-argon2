@@ -94,7 +94,7 @@ namespace Liphsoft.Crypto.Argon2
                 string encoded = hasher.Hash(pwd, salt);
                 var stopTime = DateTime.Now;
                 
-                HashMetadata metadata = PasswordHasher.ExtractMetadata(encoded);
+                HashMetadata metadata = PasswordHasher.DecodeMetadata(encoded);
 
                 Console.WriteLine("Hash:\t\t" + ToHex(metadata.Hash));
                 Console.WriteLine("Encoded:\t" + encoded);

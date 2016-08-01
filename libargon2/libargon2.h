@@ -77,6 +77,22 @@ LIBARGON2_DLLEXPORT int crypto_argon2_verify(const char *encoded, const void *pw
 LIBARGON2_DLLEXPORT const char *crypto_argon2_error_message(int error_code);
 
 /*
+* encode an Argon2 hash string into the provided buffer. 'dst_len'
+* contains the size, in characters, of the 'dst' buffer; if 'dst_len'
+* is less than the number of required characters (including the
+* terminating 0), then this function returns ARGON2_ENCODING_ERROR.
+*
+* if ctx->outlen is 0, then the hash string will be a salt string
+* (no output). if ctx->saltlen is also 0, then the string will be a
+* parameter-only string (no salt and no output).
+*
+* on success, ARGON2_OK is returned.
+*
+* No other parameters are checked
+*/
+LIBARGON2_DLLEXPORT int crypto_encode_string(char *dst, size_t dst_len, argon2_context *ctx, argon2_type type);
+
+/*
 * Decodes an Argon2 hash string into the provided structure 'ctx'.
 * The fields ctx.saltlen, ctx.adlen, ctx.outlen set the maximal salt, ad, out
 * length values that are allowed; invalid input string causes an error.

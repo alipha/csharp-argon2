@@ -39,8 +39,11 @@ namespace Liphsoft.Crypto.Argon2
 
         private static readonly RNGCryptoServiceProvider Rng = new RNGCryptoServiceProvider();
 
-        private static readonly Regex HashRegex = new Regex(@"^\$argon2([di])\$v=(\d+)$m=(\d+),t=(\d+),p=(\d+)\$([A-Za-z0-9+/=]+)\$([A-Za-z0-9+/=]*)$", RegexOptions.Compiled);
 
+        /// <summary>
+        /// Which Argon2 version this PasswordHasher class uses
+        /// </summary>
+        public static int Argon2Version { get { return 0x13;  } }
 
         /// <summary>
         /// How many iterations of the Argon2 hash to perform
@@ -170,6 +173,36 @@ namespace Liphsoft.Crypto.Argon2
         }
 
         /// <summary>
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(string password) overload instead.
+        /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
+        /// <param name="password">he raw bytes of the password to be hashed</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
+        /// </summary>
+        public string Hash(byte[] password, string salt)
+        {
+            CheckNull("Hash", "password", password, "salt", salt);
+
+            return Hash(password, StringEncoding.GetBytes(salt));
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(string password) overload instead.
+        /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
+        /// </summary>
+        public string Hash(string password, byte[] salt)
+        {
+            CheckNull("Hash", "password", password, "salt", salt);
+
+            return Hash(StringEncoding.GetBytes(password), salt);
+        }
+
+        /// <summary>
         /// Hash the raw password bytes using Argon2 with the specified salt bytes.
         /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(byte[] password) overload instead.
         /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
@@ -182,8 +215,11 @@ namespace Liphsoft.Crypto.Argon2
             CheckNull("Hash", "password", password, "salt", salt);
 
             var hash = new byte[HashLength];
-            var encoded = new byte[39 + ((HashLength + salt.Length) * 4 + 3) / 3];
-            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, encoded, encoded.Length, (int)ArgonType, 0x13);
+            var encodedLength = GetEncodedHashLength(HashLength, (uint) salt.Length);
+            var encoded = new byte[encodedLength];
+
+            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, 
+                salt, salt.Length, hash, hash.Length, encoded, encoded.Length, (int)ArgonType, Argon2Version);
 
             if (result != Argon2Error.OK)
                 throw new Argon2Exception("hashing", result);
@@ -193,6 +229,75 @@ namespace Liphsoft.Crypto.Argon2
                 firstNonNull--;
 
             return Encoding.ASCII.GetString(encoded, 0, firstNonNull + 1);
+        }
+
+        #endregion
+
+
+        #region GenerateKey and ReproduceKey Methods
+
+        public byte[] GenerateKey(string password, out string keyMetadata)
+        {
+            return GenerateKey(StringEncoding.GetBytes(password), out keyMetadata);
+        }
+
+        public byte[] GenerateKey(byte[] password, out string keyMetadata)
+        {
+            var hashMetadata = new HashMetadata
+            {
+                ArgonType = ArgonType,
+                MemoryCost = MemoryCost,
+                TimeCost = TimeCost,
+                Parallelism = Parallelism,
+                Salt = GenerateSalt(),
+                Hash = new byte[4]
+
+            };
+
+            var metadata = hashMetadata.Encode();
+            keyMetadata = metadata.Substring(0, metadata.Length - 6);
+
+            var hash = new byte[HashLength];
+            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, 
+                hashMetadata.Salt, hashMetadata.Salt.Length, hash, hash.Length, null, 0, (int)ArgonType, Argon2Version);
+
+            if (result != Argon2Error.OK)
+                throw new Argon2Exception("reproducing key", result);
+
+            return hash;
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt in order to generate a key. Typically, one would use 
+        /// For password storage, consider using the Hash methods instead. 
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        public byte[] ReproduceKey(string password, string keyMetadata)
+        {
+            return ReproduceKey(StringEncoding.GetBytes(password), keyMetadata);
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods.
+        /// <param name="password">The raw bytes of the password to be hashed</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        public byte[] ReproduceKey(byte[] password, string keyMetadata)
+        {
+            var hashMetadata = DecodeMetadata(keyMetadata + (keyMetadata.EndsWith("$") ? "AAAAAA" : ""));
+
+            var hash = new byte[HashLength];
+            var result = (Argon2Error)crypto_argon2_hash(hashMetadata.TimeCost, hashMetadata.MemoryCost, hashMetadata.Parallelism, password, password.Length, 
+                hashMetadata.Salt, hashMetadata.Salt.Length, hash, hash.Length, null, 0, (int)ArgonType, Argon2Version);
+
+            if (result != Argon2Error.OK)
+                throw new Argon2Exception("reproducing key", result);
+
+            return hash;
         }
 
         #endregion
@@ -216,6 +321,34 @@ namespace Liphsoft.Crypto.Argon2
 
         /// <summary>
         /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// <param name="password">The raw bytes of the password to be hashed</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        public byte[] HashRaw(byte[] password, string salt)
+        {
+            CheckNull("HashRaw", "password", password, "salt", salt);
+
+            return HashRaw(password, StringEncoding.GetBytes(salt));
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        public byte[] HashRaw(string password, byte[] salt)
+        {
+            CheckNull("HashRaw", "password", password, "salt", salt);
+
+            return HashRaw(StringEncoding.GetBytes(password), salt);
+        }
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
         /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods.
         /// <param name="password">The raw bytes of the password to be hashed</param>
         /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
@@ -226,7 +359,8 @@ namespace Liphsoft.Crypto.Argon2
             CheckNull("HashRaw", "password", password, "salt", salt);
 
             var hash = new byte[HashLength];
-            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, salt, salt.Length, hash, hash.Length, null, 0, (int)ArgonType, 0x13);
+            var result = (Argon2Error)crypto_argon2_hash(TimeCost, MemoryCost, Parallelism, password, password.Length, 
+                salt, salt.Length, hash, hash.Length, null, 0, (int)ArgonType, Argon2Version);
 
             if (result != Argon2Error.OK)
                 throw new Argon2Exception("raw hashing", result);
@@ -311,7 +445,7 @@ namespace Liphsoft.Crypto.Argon2
 
             if (Verify(expectedHash, password))
             {
-                var hashMetadata = ExtractMetadata(expectedHash);
+                var hashMetadata = DecodeMetadata(expectedHash, throwOnError: false);
 
                 if (hashMetadata.MemoryCost != MemoryCost || hashMetadata.TimeCost != TimeCost || hashMetadata.Parallelism != Parallelism)
                 {
@@ -351,40 +485,42 @@ namespace Liphsoft.Crypto.Argon2
         }
 
 
+        public static uint GetEncodedHashLength(uint hashLength, uint saltLength)
+        {
+            return 45 + ((hashLength + saltLength) * 4 + 3) / 3;
+        }
+
+
         /// <summary>
         /// Extracts the memory cost, time cost, etc. used to generate the Argon2 hash.
         /// <param name="formattedHash">An encoded Argon2 hash created by the Hash method</param>
-        /// <returns>The hash metadata or null if the formattedHash was not a valid encoded Argon2 hash</returns>
+        /// <param name="throwOnError">Whether to throw on an error so you can get detailed error information or to simply return null</param>
+        /// <returns>The hash metadata if the formattedHash was a valid encoded Argon2 hash, else throws or returns null</returns>
         /// </summary>
-        public static HashMetadata ExtractMetadata(string formattedHash)
+        public static HashMetadata DecodeMetadata(string formattedHash, bool throwOnError = true)
         {
             CheckNull("ExtractMetadata", "formattedHash", formattedHash);
 
             var context = new Argon2Context
             {
-                Out = Marshal.AllocHGlobal(formattedHash.Length),  // ensure the space to hold the hash is long enough
                 OutLen = (uint)formattedHash.Length,
-                Pwd = Marshal.AllocHGlobal(1),
-                PwdLen = 1,
-                Salt = Marshal.AllocHGlobal(formattedHash.Length),  // ensure the space to hold the salt is long enough
-                SaltLen = (uint)formattedHash.Length,
-                Secret = Marshal.AllocHGlobal(1),
-                SecretLen = 1,
-                AssocData = Marshal.AllocHGlobal(1),
-                AssocDataLen = 1,
-                TimeCost = 0,
-                MemoryCost = 0,
-                Lanes = 0,
-                Threads = 0
+                SaltLen = (uint)formattedHash.Length
             };
 
             try
             {
+                context.Out = Marshal.AllocHGlobal(formattedHash.Length);  // a little more space than we need, but probably not worth computing the exact amount
+                context.Salt = Marshal.AllocHGlobal(formattedHash.Length);
+
                 var type = (formattedHash.StartsWith("$argon2i") ? Argon2Type.Argon2i : Argon2Type.Argon2d);
                 var result = (Argon2Error)crypto_decode_string(context, Encoding.ASCII.GetBytes(formattedHash + "\0"), (int)type);
 
                 if (result != Argon2Error.OK)
+                {
+                    if (throwOnError)
+                        throw new Argon2Exception("decoding", result);
                     return null;
+                }
 
                 var salt = new byte[context.SaltLen];
                 var hash = new byte[context.OutLen];
@@ -403,11 +539,75 @@ namespace Liphsoft.Crypto.Argon2
             }
             finally
             {
-                Marshal.FreeHGlobal(context.Out);
-                Marshal.FreeHGlobal(context.Pwd);
-                Marshal.FreeHGlobal(context.Salt);
-                Marshal.FreeHGlobal(context.Secret);
-                Marshal.FreeHGlobal(context.AssocData);
+                try
+                {
+                    Marshal.FreeHGlobal(context.Out);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(context.Salt);
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Generates an encoded string of the metadata for the Argon2 hash.
+        /// <param name="metadata">The Argon2 metadata</param>
+        /// <param name="throwOnError">Whether to throw on an error so you can get detailed error information or to simply return null</param>
+        /// <returns>The formatted hash if the Argon2 metadata was valid, else throws or returns null</returns>
+        /// </summary>
+        public static string EncodeMetadata(HashMetadata metadata, bool throwOnError = true)
+        {
+            CheckNull("ExtractMetadata", "metadata", metadata);
+
+            var encodedLength = GetEncodedHashLength((uint)metadata.Hash.Length, (uint)metadata.Salt.Length);
+            var encoded = new byte[encodedLength];
+
+            var context = new Argon2Context
+            {
+                OutLen = (uint)metadata.Hash.Length,
+                SaltLen = (uint)metadata.Salt.Length,
+                TimeCost = metadata.TimeCost,
+                MemoryCost = metadata.MemoryCost,
+                Lanes = 1,
+                Threads = metadata.Parallelism,
+                Version = (uint)Argon2Version
+            };
+
+            try
+            {
+                context.Out = Marshal.AllocHGlobal(metadata.Hash.Length);
+                context.Salt = Marshal.AllocHGlobal(metadata.Salt.Length);
+
+                Marshal.Copy(metadata.Salt, 0, context.Salt, metadata.Salt.Length);
+                Marshal.Copy(metadata.Hash, 0, context.Out, metadata.Hash.Length);
+
+                var result = (Argon2Error)crypto_encode_string(encoded, encodedLength, context, (int)metadata.ArgonType);
+
+                if (result != Argon2Error.OK)
+                {
+                    if (throwOnError)
+                        throw new Argon2Exception("encoding", result);
+                    return null;
+                }
+            
+                var firstNonNull = encoded.Length - 2;
+                while (encoded[firstNonNull] == 0)
+                    firstNonNull--;
+
+                return Encoding.ASCII.GetString(encoded, 0, firstNonNull + 1);
+            }
+            finally
+            {
+                try
+                {
+                    Marshal.FreeHGlobal(context.Out);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(context.Salt);
+                }
             }
         }
 
@@ -439,6 +639,10 @@ namespace Liphsoft.Crypto.Argon2
 
         [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int crypto_decode_string(Argon2Context ctx, byte[] str, int type);
+
+
+        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int crypto_encode_string(byte[] dst, uint dst_len, Argon2Context ctx, int type);
 
         #endregion
     }

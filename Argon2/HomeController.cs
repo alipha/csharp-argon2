@@ -91,7 +91,7 @@ namespace Example
             bool updatedCost;
             string newPasswordHash;
 
-            HashMetadata hashMetadata = PasswordHasher.ExtractMetadata(passwordHash);
+            HashMetadata hashMetadata = PasswordHasher.DecodeMetadata(passwordHash);
             bool usingOldCosts = (hashMetadata.MemoryCost != memoryCost || hashMetadata.TimeCost != timeCost);
 
             // always compare against a password hash even if the user is not found (when that happens, we compare against dummyHash)

@@ -75,6 +75,26 @@ namespace Liphsoft.Crypto.Argon2
         string Hash(string password, string salt);
 
         /// <summary>
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(string password) overload instead.
+        /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
+        /// <param name="password">he raw bytes of the password to be hashed</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
+        /// </summary>
+        string Hash(byte[] password, string salt);
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(string password) overload instead.
+        /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
+        /// </summary>
+        string Hash(string password, byte[] salt);
+
+        /// <summary>
         /// Hash the raw password bytes using Argon2 with the specified salt bytes.
         /// Unless you need to specify your own salt for interoperability purposes, prefer the Hash(byte[] password) overload instead.
         /// Do not compare two Argon2 hashes directly. Instead, use the Verify or VerifyAndUpdate methods.
@@ -83,6 +103,33 @@ namespace Liphsoft.Crypto.Argon2
         /// <returns>A formatted string representing the hashed password, encoded with the parameters used to perform the hash</returns>
         /// </summary>
         string Hash(byte[] password, byte[] salt);
+
+        #endregion
+
+
+        #region GenerateKey and ReproduceKey Methods
+
+        byte[] GenerateKey(string password, out string metadata);
+
+        byte[] GenerateKey(byte[] password, out string metadata);
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt in order to generate a key. Typically, one would use 
+        /// For password storage, consider using the Hash methods instead. 
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] ReproduceKey(string password, string metadata);
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods.
+        /// <param name="password">The raw bytes of the password to be hashed</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] ReproduceKey(byte[] password, string metadata);
 
         #endregion
 
@@ -97,6 +144,24 @@ namespace Liphsoft.Crypto.Argon2
         /// <returns>A byte array containing only the resulting hash</returns>
         /// </summary>
         byte[] HashRaw(string password, string salt);
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// <param name="password">The raw bytes of the password to be hashed</param>
+        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] HashRaw(byte[] password, string salt);
+
+        /// <summary>
+        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
+        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
+        /// <returns>A byte array containing only the resulting hash</returns>
+        /// </summary>
+        byte[] HashRaw(string password, byte[] salt);
 
         /// <summary>
         /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.

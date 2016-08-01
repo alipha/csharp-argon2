@@ -26,6 +26,8 @@ namespace Liphsoft.Crypto.Argon2
         public uint Lanes;
         public uint Threads;
 
+        public uint Version;
+
         public IntPtr AllocateCallback;
         public IntPtr FreeCallback;
 
