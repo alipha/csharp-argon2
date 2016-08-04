@@ -46,35 +46,34 @@ namespace Liphsoft.Crypto.Argon2
         public static int Argon2Version { get { return 0x13;  } }
 
         /// <summary>
-        /// How many iterations of the Argon2 hash to perform
+        /// How many iterations of the Argon2 hash to perform (default: 3, must be at least 1)
         /// </summary>
         public uint TimeCost { get; set; }
 
         /// <summary>
-        /// How much memory to use while hashing in kibibytes (KiB)
+        /// How much memory to use while hashing in kibibytes (KiB) (default: 8192 KiB [8 MiB], must be at least 8 KiB)
         /// </summary>
         public uint MemoryCost { get; set; }
 
         /// <summary>
-        /// How many threads to use while hashing
+        /// How many threads to use while hashing (default: 1, must be at least 1)
         /// </summary>
         public uint Parallelism { get; set; }
 
         /// <summary>
-        /// The type of Argon2 hashing algorithm to use
+        /// The type of Argon2 hashing algorithm to use (Independent [default] or Dependent)
         /// Argon2d - The memory access is dependent upon the hash value (vulnerable to side-channel attacks)
         /// Argon2i - The memory access is independent upon the hash value (safe from side-channel atacks)
         /// </summary>
         public Argon2Type ArgonType { get; set; }
 
         /// <summary>
-        /// Length of the generated raw hash in bytes
+        /// Length of the generated raw hash in bytes (default: 32)
         /// </summary>
         public uint HashLength { get; set; }
 
         /// <summary>
-        /// How strings should be decoded when passed to the Hash method.
-        /// The default is Encoding.UTF8.
+        /// How strings should be decoded when passed to the Hash method (default: Encoding.UTF8)
         /// </summary>
         public Encoding StringEncoding { get; set; }
 
@@ -85,43 +84,31 @@ namespace Liphsoft.Crypto.Argon2
         /// some reasonable defaults.
         /// <param name="environment">Whether the PasswordHasher will be used in a server or single-user setting</param>
         /// </summary>
-        public PasswordHasher(UsageEnvironment environment)
+        public PasswordHasher(UsageEnvironment environment) : this()
         {
             switch (environment)
             {
-                case UsageEnvironment.Server:
-                    TimeCost = 3;
-                    MemoryCost = 8192;
-                    Parallelism = 1;
-                    break;
                 case UsageEnvironment.SingleUser:
                     TimeCost = 10;
                     MemoryCost = 131072;
                     Parallelism = 2;
                     break;
+                // else use default constructor defaults
             }
-
-            ArgonType = Argon2Type.Argon2i;
-            HashLength = 32;
-            StringEncoding = Encoding.UTF8;
         }
 
 
         /// <summary>
-        /// Initialize the Argon2 PasswordHasher with the performance and algorithm settings to use while hashing
-        /// <param name="timeCost">How many iterations of the Argon2 hash to perform (default: 3, must be at least 1)</param>
-        /// <param name="memoryCost">How much memory to use while hashing in kibibytes (KiB) (default: 8192 KiB [8 MiB], must be at least 8 KiB)</param>
-        /// <param name="parallelism">How many threads to use while hashing (default: 1, must be at least 1)</param>
-        /// <param name="argonType">The type of Argon2 hashing algorithm to use (Independent [default] or Dependent)</param>
-        /// <param name="hashLength">The length of the resulting hash in bytes (default: 32)</param>
+        /// Initialize the Argon2 PasswordHasher to the UsageEnvironment.Server performance and algorithm settings
         /// </summary>
-        public PasswordHasher(uint timeCost = 3, uint memoryCost = 8192, uint parallelism = 1, Argon2Type argonType = Argon2Type.Argon2i, uint hashLength = 32)
+        public PasswordHasher()
         {
-            TimeCost = timeCost;
-            MemoryCost = memoryCost;
-            Parallelism = parallelism;
-            ArgonType = argonType;
-            HashLength = hashLength;
+            // defaults for UsageEnvironment.Server
+            TimeCost = 3;
+            MemoryCost = 8192;
+            Parallelism = 1;
+            ArgonType = Argon2Type.Argon2i;
+            HashLength = 32;
             StringEncoding = Encoding.UTF8;
         }
 

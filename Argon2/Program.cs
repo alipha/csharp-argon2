@@ -174,7 +174,13 @@ namespace Liphsoft.Crypto.Argon2
 
             }
 
-            var hasher = new PasswordHasher(t_cost, m_cost, threads, type, hash_len);
+            var hasher = new PasswordHasher {
+               TimeCost = t_cost,
+               MemoryCost = m_cost,
+               Parallelism = threads,
+               ArgonType = type,
+               HashLength = hash_len
+            };
             Run(hasher, pwd, salt, rawOnly, encodedOnly);
         }
     }

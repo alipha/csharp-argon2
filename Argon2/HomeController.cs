@@ -82,7 +82,11 @@ namespace Example
             string dummyHash = string.Format(hashFormat, memoryCost, timeCost);
             string oldDummyHash = string.Format(hashFormat, oldMemoryCost, oldTimeCost);
 
-            var passwordHasher = new PasswordHasher(timeCost, memoryCost);
+            var passwordHasher = new PasswordHasher
+            {
+                TimeCost = timeCost,
+                MemoryCost = memoryCost
+            };
             
             // Get the user from the database in hopefully some constant-time fashion so that timing attacks
             // cannot be used to enumerate valid usernames
