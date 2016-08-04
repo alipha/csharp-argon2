@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Argon2Context.cs" />
+    <Compile Include="Argon2TypeMismatchException.cs" />
     <Compile Include="HashMetadata.cs" />
     <Compile Include="IPasswordHasher.cs" />
     <Compile Include="PasswordHasher.cs" />

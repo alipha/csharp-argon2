@@ -236,11 +236,33 @@ namespace Liphsoft.Crypto.Argon2
 
         #region GenerateKey and ReproduceKey Methods
 
+        /// <summary>
+        /// Hash the password using Argon2 with a randomly-generated salt in order to generate a key. 
+        /// The salt and algorithm parameters (time cost, etc.) are encoded and returned through the keyMetadata out argument.
+        /// If you wish to generate a key using an already-provided salt and algorithm parameters, use the ReproduceKey method.
+        /// You can use PasswordHasher.DecodeMetadata to analyze the resulting keyMetadata.
+        /// For password storage, use the Hash methods instead. 
+        /// The ArgonType in the keyMetadata must match the ArgonType of this PasswordHasher object.
+        /// <param name="password">A string representing the password to be hashed in order to create a key. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="keyMetadata">An encoded string of the salt, ArgonType, time cost, and other parameters that were used to create the key.</param>
+        /// <returns>A byte array containing only the resulting key</returns>
+        /// </summary>
         public byte[] GenerateKey(string password, out string keyMetadata)
         {
             return GenerateKey(StringEncoding.GetBytes(password), out keyMetadata);
         }
 
+        /// <summary>
+        /// Hash the password using Argon2 with a randomly-generated salt in order to generate a key. 
+        /// The salt and algorithm parameters (time cost, etc.) are encoded and returned through the keyMetadata out argument.
+        /// If you wish to generate a key using an already-provided salt and algorithm parameters, use the ReproduceKey method.
+        /// You can use PasswordHasher.DecodeMetadata to analyze the resulting keyMetadata.
+        /// For password storage, use the Hash methods instead. 
+        /// The ArgonType in the keyMetadata must match the ArgonType of this PasswordHasher object.
+        /// <param name="password">The raw bytes of the password to be hashed in order to create a key</param>
+        /// <param name="keyMetadata">An encoded string of the salt, ArgonType, time cost, and other parameters that were used to create the key.</param>
+        /// <returns>A byte array containing only the resulting key</returns>
+        /// </summary>
         public byte[] GenerateKey(byte[] password, out string keyMetadata)
         {
             var hashMetadata = new HashMetadata
@@ -268,11 +290,14 @@ namespace Liphsoft.Crypto.Argon2
         }
 
         /// <summary>
-        /// Hash the password using Argon2 with the specified salt in order to generate a key. Typically, one would use 
-        /// For password storage, consider using the Hash methods instead. 
-        /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
-        /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
-        /// <returns>A byte array containing only the resulting hash</returns>
+        /// Hash the password using Argon2 with the specified metadata in order to generate a key. Typically, one would use GenerateKey to create
+        /// a key with a random salt, then use ReproduceKey to recreate the same key.
+        /// If you do not have an encoded metadata string from GenerateKey, you can use PasswordHasher.EncodeMetadata to create one.
+        /// For password storage, use the Hash methods instead. 
+        /// The ArgonType in the keyMetadata must match the ArgonType of this PasswordHasher object.
+        /// <param name="password">A string representing the password to be hashed in order to create a key. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
+        /// <param name="keyMetadata">An encoded string of the salt, ArgonType, time cost, and other parameters to use to recreate the key.</param>
+        /// <returns>A byte array containing only the resulting key</returns>
         /// </summary>
         public byte[] ReproduceKey(string password, string keyMetadata)
         {
@@ -280,15 +305,21 @@ namespace Liphsoft.Crypto.Argon2
         }
 
         /// <summary>
-        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
-        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods.
-        /// <param name="password">The raw bytes of the password to be hashed</param>
-        /// <param name="salt">The raw salt bytes to be used for the hash. The salt must be at least 8 bytes.</param>
-        /// <returns>A byte array containing only the resulting hash</returns>
+        /// Hash the password using Argon2 with the specified metadata in order to generate a key. Typically, one would use GenerateKey to create
+        /// a key with a random salt, then use ReproduceKey to recreate the same key.
+        /// For password storage, use the Hash methods instead. 
+        /// The ArgonType in the keyMetadata must match the ArgonType of this PasswordHasher object.
+        /// <param name="password">The raw bytes of the password to be hashed in order to create a key</param>
+        /// <param name="keyMetadata">An encoded string of the salt, ArgonType, time cost, and other parameters to use to recreate the key.</param>
+        /// <returns>A byte array containing only the resulting key</returns>
         /// </summary>
         public byte[] ReproduceKey(byte[] password, string keyMetadata)
         {
+            keyMetadata = keyMetadata.Trim();
             var hashMetadata = DecodeMetadata(keyMetadata + (keyMetadata.EndsWith("$") ? "AAAAAA" : ""));
+
+            if (hashMetadata.ArgonType != ArgonType)
+                throw new Argon2TypeMismatchException("reproducing key");
 
             var hash = new byte[HashLength];
             var result = (Argon2Error)crypto_argon2_hash(hashMetadata.TimeCost, hashMetadata.MemoryCost, hashMetadata.Parallelism, password, password.Length, 
@@ -306,8 +337,9 @@ namespace Liphsoft.Crypto.Argon2
         #region HashRaw Methods
 
         /// <summary>
-        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
-        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you're using HashRaw for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// If you wish to perform key generation, use GenerateKey and ReproduceKey.
         /// <param name="password">A string representing the password to be hashed. The password is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A byte array containing only the resulting hash</returns>
@@ -320,8 +352,9 @@ namespace Liphsoft.Crypto.Argon2
         }
 
         /// <summary>
-        /// Hash the password using Argon2 with the specified salt. The HashRaw methods may be used for password-based key derivation.
-        /// Unless you're using HashRaw for key deriviation or for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// Hash the password using Argon2 with the specified salt.
+        /// Unless you're using HashRaw for interoperability purposes, the Hash methods should be used in favor of the HashRaw methods. 
+        /// If you wish to perform key generation, use GenerateKey and ReproduceKey.
         /// <param name="password">The raw bytes of the password to be hashed</param>
         /// <param name="salt">A string representing the salt to be used for the hash. The salt must be at least 8 bytes. The salt is first decoded into bytes using StringEncoding (default: Encoding.UTF8)</param>
         /// <returns>A byte array containing only the resulting hash</returns>
@@ -484,7 +517,12 @@ namespace Liphsoft.Crypto.Argon2
             return salt;
         }
 
-
+        /// <summary>
+        /// Determine the maximum number of bytes needed to store the encoded hash with its metadata (type, salt, time cost, etc.)
+        /// </summary>
+        /// <param name="hashLength">The length of the hash to be stored, in bytes</param>
+        /// <param name="saltLength">The length of the salt to be stored, in bytes</param>
+        /// <returns>The maximum number of bytes needed to store the encoded hash with its metadata</returns>
         public static uint GetEncodedHashLength(uint hashLength, uint saltLength)
         {
             return 45 + ((hashLength + saltLength) * 4 + 3) / 3;
@@ -512,7 +550,7 @@ namespace Liphsoft.Crypto.Argon2
                 context.Out = Marshal.AllocHGlobal(formattedHash.Length);  // a little more space than we need, but probably not worth computing the exact amount
                 context.Salt = Marshal.AllocHGlobal(formattedHash.Length);
 
-                var type = (formattedHash.StartsWith("$argon2i") ? Argon2Type.Argon2i : Argon2Type.Argon2d);
+                var type = GetArgonType(formattedHash);
                 var result = (Argon2Error)crypto_decode_string(context, Encoding.ASCII.GetBytes(formattedHash + "\0"), (int)type);
 
                 if (result != Argon2Error.OK)
@@ -621,6 +659,11 @@ namespace Liphsoft.Crypto.Argon2
             for (var i = 0; i < arguments.Length; i += 2)
                 if (arguments[i + 1] == null)
                     throw new ArgumentNullException(arguments[i].ToString(), string.Format("Argument {0} to method PasswordHasher.{1} is null", arguments[i], methodName));
+        }
+
+        private static Argon2Type GetArgonType(string formattedHash)
+        {
+            return formattedHash.StartsWith("$argon2d") ? Argon2Type.Argon2d : Argon2Type.Argon2i;
         }
 
 

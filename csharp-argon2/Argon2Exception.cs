@@ -38,6 +38,21 @@ namespace Liphsoft.Crypto.Argon2
         /// <param name="action">Which method the Argon2Exception originated from</param>
         /// <param name="error">The error returned from the Argon2 library</param>
         /// </summary>
-        public Argon2Exception(string action, Argon2Error error) : base(string.Format("Error during Argon2 {0}: ({1}) {2}", action, (int)error, error)) {}
+        public Argon2Exception(string action, Argon2Error error)
+            : base(string.Format("Error during Argon2 {0}: ({1}) {2}", action, (int) error, error))
+        {
+            Action = action;
+            Error = error;
+        }
+
+        /// <summary>
+        /// The action which caused the exception
+        /// </summary>
+        public string Action { get; set; }
+
+        /// <summary>
+        /// The Argon2 error associated with this exception
+        /// </summary>
+        public Argon2Error Error { get; set; }
     }
 }
