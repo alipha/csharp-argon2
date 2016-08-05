@@ -1,17 +1,84 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Liphsoft.Crypto.Argon2
+namespace Liphsoft.Crypto
 {
     public class Encryptor
     {
+        public const int AesKeyByteSize = 32;
+        public const int HmacKeyByteSize = 64;
+
         public byte[] AesKey { get; set; }
 
         public byte[] HmacKey { get; set; }
+
+        public Encoding StringEncoding { get; set; }
+
+
+        public Encryptor()
+        {
+            using (var aes = new RijndaelManaged())
+            {
+                aes.GenerateKey();
+                AesKey = aes.Key;
+            }
+
+            using (var hmac = new HMACSHA256())
+            {
+                HmacKey = hmac.Key;
+            }
+
+            StringEncoding = Encoding.UTF8;
+        }
+
+
+        public Encryptor(string aesHmacKey)
+        {
+            var combinedKeyBytes = Convert.FromBase64String(aesHmacKey);
+            AesKey = new byte[AesKeyByteSize];
+            HmacKey = new byte[HmacKeyByteSize];
+
+            Buffer.BlockCopy(combinedKeyBytes, 0, AesKey, 0, AesKeyByteSize);
+            Buffer.BlockCopy(combinedKeyBytes, AesKeyByteSize, HmacKey, 0, HmacKeyByteSize);
+            StringEncoding = Encoding.UTF8;
+        }
+
+
+        public Encryptor(byte[] aesKey, byte[] hmacKey)
+        {
+            AesKey = aesKey;
+            HmacKey = hmacKey;
+            StringEncoding = Encoding.UTF8;
+        }
+
+
+        public string Key()
+        {
+            var combinedKeyBytes = new byte[AesKeyByteSize + HmacKeyByteSize];
+            Buffer.BlockCopy(AesKey, 0, combinedKeyBytes, 0, AesKeyByteSize);
+            Buffer.BlockCopy(HmacKey, 0, combinedKeyBytes, AesKeyByteSize, HmacKeyByteSize);
+
+            return Convert.ToBase64String(combinedKeyBytes);
+        }
+
+
+        public string Encrypt(string plaintext, bool includeHMAC = true, bool includeIV = true)
+        {
+            var bytes = StringEncoding.GetBytes(plaintext);
+            var encrypted = EncryptBytes(bytes, includeHMAC, includeIV);
+            return Convert.ToBase64String(encrypted);
+        }
+
+
+        public string Decrypt(string base64ciphertext, bool includeHMAC = true, bool includeIV = true)
+        {
+            var bytes = Convert.FromBase64String(base64ciphertext);
+            var decrypted = DecryptBytes(bytes, includeHMAC, includeIV);
+            return StringEncoding.GetString(decrypted);
+        }
 
 
         public byte[] EncryptBytes(byte[] bytes, bool includeHMAC = true, bool includeIV = true)
@@ -26,7 +93,7 @@ namespace Liphsoft.Crypto.Argon2
                 if (includeIV)
                     myRijndael.GenerateIV();
                 else
-                    myRijndael.IV = new byte[myRijndael.BlockSize / 8]; // initialize to 0
+                    myRijndael.IV = new byte[myRijndael.BlockSize/8]; // initialize to 0
 
                 byte[] IV = myRijndael.IV;
 
@@ -35,17 +102,17 @@ namespace Liphsoft.Crypto.Argon2
                 {
                     byte[] encryptedBytes;
                     byte[] hash = null;
-                    
-                    if(includeHMAC)
-                        hash = new byte[hmac.HashSize / 8];
+
+                    if (includeHMAC)
+                        hash = new byte[hmac.HashSize/8];
 
 
                     using (MemoryStream msEncrypt = new MemoryStream())
                     {
-                        if(includeHMAC)
-                            msEncrypt.Write(hash, 0, hash.Length);  // placeholder for the HMAC hash
+                        if (includeHMAC)
+                            msEncrypt.Write(hash, 0, hash.Length); // placeholder for the HMAC hash
 
-                        if(includeIV)
+                        if (includeIV)
                             msEncrypt.Write(IV, 0, IV.Length);
 
                         ICryptoTransform encryptor = myRijndael.CreateEncryptor(myRijndael.Key, IV);
@@ -70,7 +137,7 @@ namespace Liphsoft.Crypto.Argon2
             }
         }
 
-        
+
         public byte[] DecryptBytes(byte[] bytes, bool includeHMAC = true, bool includeIV = true)
         {
             if (bytes == null || bytes.Length == 0)
@@ -82,26 +149,18 @@ namespace Liphsoft.Crypto.Argon2
             {
                 using (HMACSHA256 hmac = new HMACSHA256(HmacKey))
                 {
-                    int hashDiff = 0;
-
                     hashByteSize = hmac.HashSize / 8;
                     byte[] computedHash = hmac.ComputeHash(bytes, hashByteSize, bytes.Length - hashByteSize);
 
-                    // Done this way so that the hash verification takes exactly the same amount of time regardless
-                    // of whether the hash was correct or not
-                    for (int i = 0; i < computedHash.Length; ++i)
-                        hashDiff |= (computedHash[i] ^ bytes[i]);
-
-                    if (hashDiff != 0)
-                        throw new CryptographicException("Bad Hash.");
+                    VerifyHash(bytes, computedHash);
                 }
             }
 
             using (RijndaelManaged myRijndael = new RijndaelManaged())
             {
-                byte[] IV = new byte[myRijndael.BlockSize / 8];
+                byte[] IV = new byte[myRijndael.BlockSize/8];
 
-                if(includeIV)
+                if (includeIV)
                     Buffer.BlockCopy(bytes, hashByteSize, IV, 0, IV.Length);
 
                 myRijndael.Key = AesKey;
@@ -114,8 +173,8 @@ namespace Liphsoft.Crypto.Argon2
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Write))
                     {
                         int dataOffset = hashByteSize;
-                        
-                        if(includeIV)
+
+                        if (includeIV)
                             dataOffset += IV.Length;
 
                         csDecrypt.Write(bytes, dataOffset, bytes.Length - dataOffset);
@@ -125,6 +184,21 @@ namespace Liphsoft.Crypto.Argon2
                     return msDecrypt.ToArray();
                 }
             }
+        }
+
+
+        [MethodImpl(MethodImplOptions.NoOptimization)]
+        private void VerifyHash(byte[] actual, byte[] expected)
+        {
+            int hashDiff = 0;
+
+            // Done this way so that the hash verification takes exactly the same amount of time regardless
+            // of whether the hash was correct or not
+            for (int i = 0; i < expected.Length; ++i)
+                hashDiff |= (expected[i] ^ actual[i]);
+
+            if (hashDiff != 0)
+                throw new CryptographicException("Bad Hash.");
         }
     }
 }
