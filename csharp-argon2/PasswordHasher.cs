@@ -268,7 +268,7 @@ namespace Liphsoft.Crypto.Argon2
 
             var result = (Argon2Error)crypto_argon2_verify(StringEncoding.GetBytes(expectedHash), password, password.Length, (int)ArgonType);
 
-            if (result == Argon2Error.OK || result == Argon2Error.DECODING_FAIL)
+            if (result == Argon2Error.OK || result == Argon2Error.VERIFY_MISMATCH)
                 return result == Argon2Error.OK;
 
             throw new Argon2Exception("verifying", result);

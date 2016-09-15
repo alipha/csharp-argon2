@@ -103,7 +103,7 @@ namespace Liphsoft.Crypto.Argon2
                 if(hasher.Verify(encoded, pwd))
                     Console.WriteLine("Verification ok");
                 else
-                    throw new Argon2Exception("verifying", Argon2Error.DECODING_FAIL);
+                    throw new Argon2Exception("verifying", Argon2Error.VERIFY_MISMATCH);
             }
             catch (Exception ex)
             {
