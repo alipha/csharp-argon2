@@ -5,6 +5,10 @@ C#/.NET binding for the Argon2 password hash
 
 The easiest way would be to search for [Liphsoft.Crypto.Argon2](https://www.nuget.org/packages/Liphsoft.Crypto.Argon2) in the Nuget Package Manager and install it through Nuget. You should explicitly specify in your solution using the configuration manager whether to build your solution for x86 or x64 and *not* use the default "Any CPU". You may get an error at runtime if the incorrect DLL is used because you specified your platform as "Any CPU".
 
+### libargon2.dll web application issues
+
+You may encounter some issues with IIS not finding the libargon2.dll or not having permissions to access the DLL. @cosmin-ionita provided a nice explanation on how to get this to work [here](https://github.com/alipha/csharp-argon2/issues/2#issuecomment-250428792).
+
 ### Building from source
 
 To build the C# and C libraries from source, simply build the csharp-argon2 project and both Liphsoft.Crypto.Argon2.dll and libargon2.dll should be generated in the bin directory of the solution. You need both DLLs.
