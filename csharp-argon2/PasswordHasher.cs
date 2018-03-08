@@ -424,7 +424,7 @@ namespace Liphsoft.Crypto.Argon2
         }
 
 
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libargon2", EntryPoint = "argon2_hash")]
         private static extern int crypto_argon2_hash(uint t_cost, uint m_cost, uint parallelism,
             byte[] pwd, int pwdlen,
             byte[] salt, int saltlen,
@@ -433,11 +433,11 @@ namespace Liphsoft.Crypto.Argon2
             int type, int version);
 
 
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libargon2", EntryPoint = "argon2_verify")]
         private static extern int crypto_argon2_verify(byte[] encoded, byte[] pwd, int pwdlen, int type);
 
 
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("libargon2", EntryPoint = "decode_string")]
         private static extern int crypto_decode_string(Argon2Context ctx, byte[] str, int type);
 
         #endregion
