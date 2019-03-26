@@ -2,6 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Library</OutputType>
+    <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Liphsoft.Crypto.Argon2</RootNamespace>
     <AssemblyName>Liphsoft.Crypto.Argon2</AssemblyName>
@@ -9,12 +10,23 @@
     <FileAlignment>512</FileAlignment>
     <Platforms>x64</Platforms>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DefineConstants>WINDOWS;DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DefineConstants>WINDOWS;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\bin\Debug\csharp-argon2.XML</DocumentationFile>
@@ -24,7 +36,6 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>..\bin\Release\csharp-argon2.XML</DocumentationFile>
