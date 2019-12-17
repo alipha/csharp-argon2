@@ -10,19 +10,19 @@
     <FileAlignment>512</FileAlignment>
     <Platforms>x64</Platforms>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)|$(Platform)' == 'Debug|x64'">
+  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)' == 'Debug'">
     <DefineConstants>WINDOWS;DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)|$(Platform)' == 'Debug|x64'">
+  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)' == 'Debug'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)|$(Platform)' == 'Release|x64'">
+  <PropertyGroup Condition="'$(IsWindows)'=='true' AND '$(Configuration)' == 'Release'">
     <DefineConstants>WINDOWS;TRACE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)|$(Platform)' == 'Release|x64'">
+  <PropertyGroup Condition="'$(IsWindows)'!='true' AND '$(Configuration)' == 'Release'">
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -32,7 +32,7 @@
     <DocumentationFile>..\bin\Debug\csharp-argon2.XML</DocumentationFile>
     <CheckForOverflowUnderflow></CheckForOverflowUnderflow>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
