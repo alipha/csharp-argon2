@@ -1,4 +1,4 @@
-﻿/*
+/*
  * The MIT License (MIT)
  * 
  * Copyright (c) 2016 Kevin Spinar (Alipha)
@@ -423,8 +423,11 @@ namespace Liphsoft.Crypto.Argon2
                     throw new ArgumentNullException(arguments[i].ToString(), string.Format("Argument {0} to method PasswordHasher.{1} is null", arguments[i], methodName));
         }
 
-
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+#if WINDOWS
+        [DllImport("libargon2.dll", EntryPoint = "crypto_argon2_hash", CallingConvention = CallingConvention.Cdecl)]
+#else
+        [DllImport("libargon2", EntryPoint = "argon2_hash")]
+#endif
         private static extern int crypto_argon2_hash(uint t_cost, uint m_cost, uint parallelism,
             byte[] pwd, int pwdlen,
             byte[] salt, int saltlen,
@@ -432,14 +435,20 @@ namespace Liphsoft.Crypto.Argon2
             byte[] encoded, int encodedlen,
             int type, int version);
 
-
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+#if WINDOWS
+        [DllImport("libargon2.dll", EntryPoint = "crypto_argon2_verify", CallingConvention = CallingConvention.Cdecl)]
+#else
+        [DllImport("libargon2", EntryPoint = "argon2_verify")]
+#endif
         private static extern int crypto_argon2_verify(byte[] encoded, byte[] pwd, int pwdlen, int type);
 
-
-        [DllImport("libargon2.dll", CallingConvention = CallingConvention.Cdecl)]
+#if WINDOWS
+        [DllImport("libargon2.dll", EntryPoint = "crypto_decode_string", CallingConvention = CallingConvention.Cdecl)]
+#else
+        [DllImport("libargon2", EntryPoint = "decode_string")]
+#endif
         private static extern int crypto_decode_string(Argon2Context ctx, byte[] str, int type);
 
-        #endregion
+#endregion
     }
 }
